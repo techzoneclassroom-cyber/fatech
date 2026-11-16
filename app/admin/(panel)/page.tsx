@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { categoryName, type Product } from "@/lib/catalogue";
 import { getProducts } from "@/lib/products";
 import { isDbConfigured } from "@/lib/supabase/server";
@@ -32,9 +33,16 @@ export default async function Dashboard() {
       </div>
 
       <p className="form-note" style={{ marginTop: 18 }}>
-        Editing, photo uploads, CSV import, orders with printable receipts, and promotions come next.
-        For now this page confirms the database connection and what the shop is serving.
+        Changes made here go live on the shop within a minute.
       </p>
+
+      <div className="row-wrap" style={{ marginTop: 14 }}>
+        <Link className="btn btn--dark btn--sm" href="/admin/products/new">Add product</Link>
+        <Link className="btn btn--sm" href="/admin/products">All products</Link>
+        <Link className="btn btn--sm" href="/admin/import">CSV import</Link>
+        <Link className="btn btn--sm" href="/admin/orders">Orders</Link>
+        <Link className="btn btn--sm" href="/admin/promotions">Promotions</Link>
+      </div>
 
       <div className="table-wrap" style={{ marginTop: 20 }}>
         <table className="admin-table">

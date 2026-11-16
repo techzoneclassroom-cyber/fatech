@@ -4,8 +4,10 @@ import { NavLinks } from "./nav-links";
 import { NAV } from "@/lib/nav";
 import { Cart, Mail, Menu as MenuIcon, Phone, Pin, WhatsApp } from "./icons";
 import { Menu } from "./menu";
+import { getActivePromo } from "@/lib/promos";
 
-export function Header() {
+export async function Header() {
+  const promo = await getActivePromo();
   return (
     <>
       <a className="skip" href="#main">Skip to content</a>
@@ -24,6 +26,14 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {promo && (
+        <div className="promo-bar">
+          <div className="container">
+            <Link href={promo.href}>{promo.message} <span aria-hidden="true">→</span></Link>
+          </div>
+        </div>
+      )}
 
       <header className="site-header">
         <div className="container">

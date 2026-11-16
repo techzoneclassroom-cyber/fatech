@@ -26,18 +26,21 @@ app/                 pages (App Router)
   page.tsx           home
   shop/              catalogue with search + category filter
   product/[slug]/    product detail (revalidated every 60s)
-  cart/              cart + WhatsApp checkout
-  admin/             sign in + protected dashboard (see Admin setup)
+  cart/              cart + WhatsApp checkout (also records the order when Supabase is on)
+  admin/             sign in + dashboard: products, CSV import, orders, promotions
   services/ software/ courses/
   about/ contact/ quote/ import/ repair/ faq/
   policies/          shipping, returns, privacy, terms, cookies
+  feed.xml/          product feed for Google Merchant Center / Facebook catalogues
   sitemap.ts robots.ts not-found.tsx icon.png
 components/          header, footer, cards, buy box, forms, icons, policy shell
 lib/site.ts          business details, WhatsApp helper, GHS formatter
 lib/catalogue.ts     5 categories + fallback sample products
 lib/products.ts      product reads (Supabase, falling back to the sample file)
+lib/admin/           server-only admin queries + product/CSV validation
+lib/promos.ts        cached banner read (used by the site header)
 lib/cart.ts          localStorage cart (key: fa_cart)
-lib/supabase/        server-only Supabase clients
+lib/supabase/        server-only Supabase clients (read, cookie, service-role)
 middleware.ts        gates /admin, refreshes the admin session
 supabase/            schema + seed SQL (run once in the dashboard)
 public/              logo, flyer, generated images (images/*.webp)
@@ -54,8 +57,8 @@ then the shop uses `PRODUCTS` in `lib/catalogue.ts` (the same 18 sample items).
   `sort` controls order.
 - Categories stay in code (`CATEGORIES` in `lib/catalogue.ts`); a product's
   `category` must match one of their slugs.
-- Images live in `public/images/` and are stored as paths (`/images/p-ac.webp`).
-  Photo uploads from the dashboard are a later phase.
+- Images can be a path (`/images/p-ac.webp`) or an uploaded photo's public URL;
+  the dashboard uploads to the `product-images` bucket in Supabase Storage.
 - Home, product pages and the sitemap revalidate every 60 seconds; `/shop`
   reads on each request.
 
@@ -63,23 +66,54 @@ The catalogue is **sample data**. Replace prices, stock claims and images with
 verified information before launch, and remove the "Sample" badges in
 `components/product-card.tsx` and `app/product/[slug]/page.tsx` when you do.
 
+## Using the dashboard
+
+Sign in at `/admin`, then:
+
+- **Products → Add product / edit.** One form for everything: price in cedis,
+  specs one per line (`Label: Value`), and a photo file up to 5 MB. Saving a
+  photo stores it in Supabase and replaces the image path. Slug is fixed for
+  edits, so existing links keep working.
+- **Import.** Download `public/products-import-template.csv`, fill it, then
+  upload or paste it. The preview shows which rows are valid before anything is
+  written; valid rows are upserted on slug, bad rows are listed and skipped.
+- **Orders.** A cart sent from WhatsApp is also saved here, priced from the
+  catalogue (not from the browser). Set New → Confirmed → Delivered, and print
+  an **Invoice** (for the customer to pay) or a **Receipt** (payment received).
+  Print with the button, or use the browser's own print dialog. Receipts say
+  "payment not confirmed" until the order is Confirmed or Delivered.
+- **Promotions.** The newest active message becomes a gold banner across the
+  site (updates within a minute). Deactivate to remove it; old ones stay for
+  reference.
+- **Feed.** `/feed.xml` lists active products in Google Merchant format.
+
+The header of the dashboard shows the same public pages as customers see; use
+the links in the black bar to move between sections.
+
 ## Admin setup
 
 `/admin` is not linked from the site and is excluded from search engines. To
 make it work:
 
 1. Create a project at supabase.com (free tier is enough to start).
-2. In the SQL editor, run `supabase/migrations/001_init.sql`, then `supabase/seed.sql`.
+2. In the SQL editor, run `supabase/migrations/001_init.sql`, then
+   `supabase/migrations/002_admin.sql`, then `supabase/seed.sql`. The second file
+   adds orders, promotions and the `product-images` storage bucket.
 3. Authentication → Users → Add user: the admin's email and a strong password,
    auto-confirm the user.
-4. In Project Settings → API, copy the project URL and the publishable (anon) key
-   into `.env.local` and into Vercel's environment variables:
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+4. In Project Settings → API, copy the project URL, the publishable (anon) key
+   and the **service_role** key. Put all three in `.env.local` (local) and in
+   Vercel's environment variables:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`.
 5. Rebuild (`npm run dev` locally, or redeploy) and sign in at `/admin`.
 
 The publishable key is safe to ship in the browser bundle: row-level security
-only allows it to *read* active products. Writes will be added later through a
-server-only service-role key — never expose that key with a `NEXT_PUBLIC_` name.
+only allows it to read active products and active promotions. Every write
+(product edits, photo uploads, orders, promotions) goes through the server-only
+service-role key, which must never be named with a `NEXT_PUBLIC_` prefix or
+committed. The dashboard still checks the signed-in user on each action, so the
+key is not reachable by a visitor.
 
 Notes: the free tier pauses a project after a week of low activity (data is kept;
 resume it from the dashboard within a year) and keeps no scheduled backups. See
@@ -110,25 +144,34 @@ Everything built so far runs on free plans; no paid feature is used.
   shop is commercial, so Vercel wants Pro (about $20/month). Netlify's free plan
   allows commercial sites within its credit limits, and supports Next.js 15 —
   that is the zero-cost option if you do not want to pay Vercel.
-- **Storage.** Photo uploads (next phase) fit in Supabase's 1 GB free storage at
-  the current 900px WebP sizes; there is no need for paid storage at this size.
+- **Storage.** The 5 MB upload limit keeps photos inside Supabase's 1 GB free
+  storage for a long time at shop-sized catalogues; compress before uploading if
+  a batch of phone photos gets close.
 
 ## Orders and enquiries
 
-No server or database is used. `components/enquiry-form.tsx` and `app/cart/page.tsx`
-build a formatted message and open `https://wa.me/<number>` with it pre-filled,
-so the customer sends it from their own WhatsApp. Phone, email and map links are
-plain `tel:`, `mailto:` and Google Maps links. If WhatsApp is blocked, the pages
-show a fallback link.
+Enquiries (`components/enquiry-form.tsx` and the quote/repair/import forms) build
+a formatted message and open `https://wa.me/<number>` with it pre-filled, so the
+customer sends it from their own WhatsApp. Phone, email and map links are plain
+`tel:`, `mailto:` and Google Maps links. If WhatsApp is blocked, the pages show a
+fallback link.
 
-To change numbers or email, edit `BUSINESS` in `lib/site.ts`.
+With Supabase configured, the cart also saves the order before opening WhatsApp:
+the server re-prices every line from the `products` table, so a tampered browser
+cannot change what is recorded. If saving fails the customer still gets the
+WhatsApp message and a local reference — nothing blocks the sale. Mark the order
+Confirmed on WhatsApp when payment is agreed, then Delivered when handed over.
+The reference (`FA-YYMM-NNNN`) is shown to the customer and on the invoice.
+
+Order records are only visible to signed-in admins; the public key cannot read
+them. To change numbers or email, edit `BUSINESS` in `lib/site.ts`.
 
 ## Deploy (when you are ready)
 
 1. Push the `fatech` folder to GitHub.
 2. Import the repo in Vercel, framework preset **Next.js**, no build tweaks needed.
-3. Add `NEXT_PUBLIC_SITE_URL=https://your-domain` plus the two Supabase variables
-   (see Admin setup) in Vercel → Settings → Environment Variables.
+3. Add `NEXT_PUBLIC_SITE_URL=https://your-domain` plus the three Supabase
+   variables (see Admin setup) in Vercel → Settings → Environment Variables.
 4. Deploy, then point the domain at Vercel.
 
 Nothing needs Supabase for the site to run; without it the sample catalogue is used.
@@ -142,6 +185,7 @@ Nothing needs Supabase for the site to run; without it the sample catalogue is u
 
 ## Not built yet
 
-Admin product editing and photo uploads, CSV import, order records with printable
-receipts/invoices, promotions, online payment, customer accounts, stock
-management, email notifications, reviews.
+Online payment, customer accounts, stock counting, email notifications, reviews.
+Receipts and invoices print from the browser (no PDF server), so print from the
+deployed site or a local production build — `next dev` is not a reliable place to
+print from.

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isDbConfigured, supabaseServer } from "@/lib/supabase/server";
 import { signOut } from "../actions";
@@ -37,6 +38,13 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <div className="admin-bar">
         <div className="container">
           <b>F.A TECHNOLOGIES <span className="admin-tag">Admin</span></b>
+          <nav className="admin-nav" aria-label="Admin">
+            <Link href="/admin">Dashboard</Link>
+            <Link href="/admin/products">Products</Link>
+            <Link href="/admin/orders">Orders</Link>
+            <Link href="/admin/import">Import</Link>
+            <Link href="/admin/promotions">Promotions</Link>
+          </nav>
           <div className="admin-tools">
             <span className="admin-who">{user.email}</span>
             <form action={signOut}>

@@ -5,11 +5,13 @@ import { clearCart, readCart, removeItem, setQty, type CartItem } from "@/lib/ca
 import { BUSINESS, ghs, waLink } from "@/lib/site";
 import { productBySlug } from "@/lib/catalogue";
 import { Cart as CartIcon, WhatsApp } from "@/components/icons";
+import { placeOrder } from "./actions";
 
-const buildMessage = (items: CartItem[], d: { name: string; phone: string; town: string; notes: string }) => {
+const buildMessage = (items: CartItem[], d: { name: string; phone: string; town: string; notes: string }, ref = "") => {
   const sub = items.reduce((s, i) => s + i.price * i.qty, 0);
   return [
     "Hello F.A TECHNOLOGIES, I'd like to order:",
+    ...(ref ? ["", `Order reference: ${ref}`] : []),
     "",
     ...items.map((i, n) => `${n + 1}. ${i.name} × ${i.qty} — ${ghs(i.price * i.qty)}`),
     "",
@@ -29,16 +31,28 @@ export default function CartPage() {
   const [ready, setReady] = useState(false);
   const [details, setDetails] = useState({ name: "", phone: "", town: "", notes: "" });
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [order, setOrder] = useState<{ ref: string; stored: boolean } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => { setItems(readCart()); setReady(true); }, []);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
 
-  const open = (intl: string) => {
+  const open = async (intl: string) => {
     if (!formRef.current?.reportValidity()) return;
+    // Open the tab before awaiting so the browser still counts it as the customer's click.
+    const tab = window.open("", "_blank");
+    setSending(true);
+    const placed = await placeOrder({
+      ...details,
+      items: items.map((i) => ({ slug: i.id, name: i.name, price: i.price, qty: i.qty })),
+    });
+    setOrder(placed);
+    const link = waLink(intl, buildMessage(items, details, placed.ref));
+    if (tab) tab.location.href = link; else window.open(link, "_blank", "noopener,noreferrer");
     setSentTo(intl);
-    window.open(waLink(intl, buildMessage(items, details)), "_blank", "noopener,noreferrer");
+    setSending(false);
   };
 
   if (!ready) {
@@ -157,19 +171,25 @@ export default function CartPage() {
                   value={details.notes} onChange={(e) => setDetails({ ...details, notes: e.target.value })} />
               </div>
 
-              <button className="btn btn--wa btn--block" type="submit">
-                <WhatsApp size={18} /> Send order on WhatsApp
+              <button className="btn btn--wa btn--block" type="submit" disabled={sending}>
+                <WhatsApp size={18} /> {sending ? "Preparing order…" : "Send order on WhatsApp"}
               </button>
-              <button className="btn btn--block" type="button" onClick={() => open(BUSINESS.whatsapp[1].intl)}>
+              <button className="btn btn--block" type="button" disabled={sending} onClick={() => open(BUSINESS.whatsapp[1].intl)}>
                 Send to {BUSINESS.whatsapp[1].label} instead
               </button>
               <p className="form-note">
                 Opens WhatsApp with your order written out. Nothing is charged on this site — we confirm everything first.
               </p>
+              {order && (
+                <p className="form-note" role="status">
+                  Order reference <b>{order.ref}</b>
+                  {order.stored ? " — saved in the shop's records." : " — not saved (the online records are offline); quote this reference when you chat with us."}
+                </p>
+              )}
               {sentTo && (
                 <p className="form-note">
                   WhatsApp did not open?{" "}
-                  <a href={waLink(sentTo, buildMessage(items, details))} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, textDecoration: "underline" }}>
+                  <a href={waLink(sentTo, buildMessage(items, details, order?.ref))} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, textDecoration: "underline" }}>
                     Tap here to send the order.
                   </a>
                 </p>
