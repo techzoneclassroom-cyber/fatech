@@ -17,7 +17,7 @@ export default async function OrderPage({
 }) {
   const { ref } = await params;
   const { doc, error } = await searchParams;
-  const order = await getOrder(decodeURIComponent(ref));
+  const order = await getOrder(ref);
   if (!order) notFound();
 
   if (doc === "invoice" || doc === "receipt") {

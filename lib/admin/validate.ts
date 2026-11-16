@@ -69,7 +69,7 @@ export function productRow(f: Fields): { row: ProductRow | null; error: string }
   const condition = ((f.condition ?? "new").trim().toLowerCase()) as ProductRow["condition"];
   if (!CASE.includes(condition)) return { row: null, error: "Condition must be new, refurbished or used." };
 
-  const image = (f.image ?? "").trim();
+  const image = (f.image ?? "").trim() || "/images/cat-it.webp";
   if (!image.startsWith("/") && !image.startsWith("https://")) {
     return { row: null, error: "Image must start with / (a file in public) or https://." };
   }

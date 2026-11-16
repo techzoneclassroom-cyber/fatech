@@ -1,23 +1,28 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isDbConfigured, supabaseServer } from "@/lib/supabase/server";
+import { isAdminConfigured } from "@/lib/supabase/admin";
 import { signOut } from "../actions";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  if (!isDbConfigured) {
+  // Reads need the project URL + publishable key; every dashboard write needs the service key too.
+  if (!isDbConfigured || !isAdminConfigured) {
     return (
       <div className="container" style={{ paddingBlock: 48 }}>
         <div className="form-card" style={{ maxWidth: 640 }}>
           <p className="kicker">Admin</p>
-          <h1 style={{ fontSize: "1.55rem", margin: "6px 0 10px" }}>Connect the catalogue first</h1>
+          <h1 style={{ fontSize: "1.55rem", margin: "6px 0 10px" }}>
+            {isDbConfigured ? "Add the server write key" : "Connect the catalogue first"}
+          </h1>
           <p className="muted" style={{ marginTop: 0 }}>
-            The dashboard needs a Supabase project. Until it is connected, the shop keeps using the
-            built-in sample catalogue and no admin can sign in.
+            {isDbConfigured
+              ? "The shop can read products, but saving anything needs SUPABASE_SERVICE_ROLE_KEY on the server."
+              : "The dashboard needs a Supabase project. Until it is connected, the shop keeps using the built-in sample catalogue and no admin can sign in."}
           </p>
           <ol className="steps">
-            <li>Create a project at supabase.com, then run <code>supabase/migrations/001_init.sql</code> and <code>supabase/seed.sql</code> in the SQL editor.</li>
+            <li>Create a project at supabase.com, then run <code>supabase/migrations/001_init.sql</code>, <code>supabase/migrations/002_admin.sql</code> and <code>supabase/seed.sql</code> in the SQL editor.</li>
             <li>Add a user under Authentication → Users (email and password, confirmed).</li>
-            <li>Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code>, then rebuild.</li>
+            <li>Set <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> and <code>SUPABASE_SERVICE_ROLE_KEY</code>, then rebuild.</li>
           </ol>
           <p className="form-note">Full steps are in the README under “Admin setup”.</p>
         </div>

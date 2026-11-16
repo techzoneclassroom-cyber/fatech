@@ -34,6 +34,9 @@ const FIELDS = ["slug", "name", "category", "brand", "price", "compare_at", "con
 const shopPaths = () => {
   revalidatePath("/");
   revalidatePath("/shop");
+  revalidatePath("/product/[slug]", "page");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/feed.xml");
   revalidatePath("/admin/products");
 };
 
@@ -43,10 +46,17 @@ export async function saveProduct(formData: FormData) {
   const fields = Object.fromEntries(FIELDS.map((k) => [k, String(formData.get(k) ?? "")])) as Fields;
   fields.featured = formData.has("featured") ? "yes" : "no";
   fields.active = formData.has("active") ? "yes" : "no";
-  if (!fields.image.trim()) fields.image = "/images/cat-it.webp";
+  // Editing keeps the original slug so links and old orders never point at a fork.
+  const original = String(formData.get("original") ?? "").trim();
+  if (original) fields.slug = original;
 
   const first = productRow(fields);
   if (!first.row) redirect(`/admin/products?error=${encodeURIComponent(first.error)}`);
+
+  if (!original) {
+    const { data: clash } = await supabaseAdmin().from("products").select("slug").eq("slug", first.row.slug).maybeSingle();
+    if (clash) redirect(`/admin/products?error=${encodeURIComponent("That slug is already used. Edit the existing product instead.")}`);
+  }
 
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
@@ -120,13 +130,15 @@ export async function savePromotion(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/shop");
   revalidatePath("/admin/promotions");
+  redirect("/admin/promotions?saved=1");
 }
 
 export async function togglePromotion(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const active = String(formData.get("active") ?? "") === "true";
-  await supabaseAdmin().from("promotions").update({ active: !active }).eq("id", id);
+  const { error } = await supabaseAdmin().from("promotions").update({ active: !active }).eq("id", id);
+  if (error) redirect(`/admin/promotions?error=${encodeURIComponent(error.message)}`);
   revalidatePath("/");
   revalidatePath("/shop");
   revalidatePath("/admin/promotions");
@@ -134,7 +146,8 @@ export async function togglePromotion(formData: FormData) {
 
 export async function deletePromotion(formData: FormData) {
   await requireAdmin();
-  await supabaseAdmin().from("promotions").delete().eq("id", String(formData.get("id") ?? ""));
+  const { error } = await supabaseAdmin().from("promotions").delete().eq("id", String(formData.get("id") ?? ""));
+  if (error) redirect(`/admin/promotions?error=${encodeURIComponent(error.message)}`);
   revalidatePath("/");
   revalidatePath("/shop");
   revalidatePath("/admin/promotions");

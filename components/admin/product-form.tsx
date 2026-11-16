@@ -7,14 +7,15 @@ const money = (p: number | null | undefined) => (p ? (p / 100).toFixed(2) : "");
 export function ProductForm({ product }: { product?: AdminProduct }) {
   return (
     <form action={saveProduct} className="form-card" style={{ maxWidth: 820 }}>
+      {product && <input type="hidden" name="original" value={product.slug} />}
       <div className="form-grid">
         <div className="field">
           <label htmlFor="name">Name</label>
           <input id="name" name="name" required minLength={2} maxLength={120} defaultValue={product?.name} />
         </div>
         <div className="field">
-          <label htmlFor="slug">Slug <span className="hint">(URL name — leave blank to generate)</span></label>
-          <input id="slug" name="slug" maxLength={80} defaultValue={product?.slug} placeholder="hp-elitebook-840-g6" />
+          <label htmlFor="slug">Slug <span className="hint">{product ? "(fixed — links and orders use it)" : "(URL name — leave blank to generate)"}</span></label>
+          <input id="slug" name="slug" maxLength={80} defaultValue={product?.slug} readOnly={Boolean(product)} placeholder="hp-elitebook-840-g6" />
         </div>
         <div className="field">
           <label htmlFor="category">Category</label>
