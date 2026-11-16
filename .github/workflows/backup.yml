@@ -1,0 +1,30 @@
+name: Weekly database backup
+
+# Free Supabase keeps no scheduled backups, so this dumps the public schema once
+# a week and keeps the file as a workflow artifact for 90 days.
+# Setup: add the repository secret SUPABASE_DB_URL = Supabase → Connect →
+# Session pooler (port 5432, path /postgres), password URL-encoded.
+# Restore: pg_restore --no-owner -d "<session pooler url>" fatech.dump
+
+on:
+  schedule:
+    - cron: "30 6 * * 0" # Sundays, 06:30 UTC
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump public schema
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          # postgres:17 ships the newest pg_dump, which can dump older servers too.
+          docker run --rm -e SUPABASE_DB_URL postgres:17 pg_dump --format=custom \
+            --no-owner --no-privileges --schema=public "$SUPABASE_DB_URL" > fatech.dump
+          test -s fatech.dump
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fatech-db
+          path: fatech.dump
+          retention-days: 90
