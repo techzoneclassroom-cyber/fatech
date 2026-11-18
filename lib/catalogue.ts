@@ -50,7 +50,11 @@ export type Product = {
   short: string;
   specs: [string, string][];
   image: string;
+  // Up to five photos; the first is the main image. Empty means only `image`.
+  images?: string[];
   featured?: boolean;
+  // False/undefined means a sample entry: prices are examples, stock unknown.
+  verified?: boolean;
 };
 
 const img = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.image]));

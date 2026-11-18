@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
+import { ContactProvider } from "@/components/contact-provider";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { Assistant } from "@/components/assistant";
 import "./globals.css";
 
 const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
@@ -32,13 +35,17 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#080808" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const contact = await getContact();
   return (
     <html lang="en" className={`${body.variable} ${display.variable}`}>
       <body>
-        <Header />
-        <main id="main">{children}</main>
-        <Footer />
+        <ContactProvider value={contact}>
+          <Header contact={contact} />
+          <main id="main">{children}</main>
+          <Footer contact={contact} />
+          <Assistant />
+        </ContactProvider>
       </body>
     </html>
   );

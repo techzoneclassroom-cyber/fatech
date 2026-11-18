@@ -50,7 +50,7 @@ export function ImportForm() {
       </div>
 
       <p className="form-note">
-        Columns: <code>slug, name, category, brand, price, compare_at, condition, warranty, short, specs, image, featured, active, sort</code>.
+        Columns: <code>slug, name, category, brand, price, compare_at, condition, warranty, short, specs, image, featured, active, verified, sort</code>.
         Required: name, category, price. Existing slugs are updated. Download{" "}
         <a href="/products-import-template.csv" download style={{ fontWeight: 700, textDecoration: "underline" }}>the template</a>.
       </p>

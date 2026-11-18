@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BUSINESS } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 
-export function Policy({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
+export async function Policy({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -23,8 +24,8 @@ export function Policy({ title, intro, children }: { title: string; intro: strin
           {children}
           <hr className="rule" />
           <p className="small muted">
-            Questions about this policy? Email <a href={`mailto:${BUSINESS.email}`} style={{ textDecoration: "underline" }}>{BUSINESS.email}</a>{" "}
-            or message us on WhatsApp at {BUSINESS.phone}. F.A TECHNOLOGIES · {BUSINESS.location}.
+            Questions about this policy? Email <a href={`mailto:${contact.email}`} style={{ textDecoration: "underline" }}>{contact.email}</a>{" "}
+            or message us on WhatsApp at {contact.phone}. F.A TECHNOLOGIES · {contact.location}.
           </p>
         </article>
       </div>

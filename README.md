@@ -21,29 +21,38 @@ variables are covered under Admin setup and are not needed to run the shop.
 
 ## What is in here
 
+Everything for the shop lives in this one folder. Two sub-folders are working
+material, not part of the deployed site: `artwork/` holds the original PNGs the
+web images were made from, and `docs/screenshots/` holds phone-width captures
+taken during review. Both are git-ignored, so they never reach Vercel.
+
 ```
 app/                 pages (App Router)
   page.tsx           home
   shop/              catalogue with search + category filter
   product/[slug]/    product detail (revalidated every 60s)
   cart/              cart + WhatsApp checkout (also records the order when Supabase is on)
-  admin/             sign in + dashboard: products, CSV import, orders, promotions
+  admin/             sign in + dashboard: products, CSV import, orders, promotions, team, settings
   services/ software/ courses/
   about/ contact/ quote/ import/ repair/ faq/
   policies/          shipping, returns, privacy, terms, cookies
   feed.xml/          product feed for Google Merchant Center / Facebook catalogues
+  api/assistant/     chat replies for the Ask F.A button
   sitemap.ts robots.ts not-found.tsx icon.png
-components/          header, footer, cards, buy box, forms, icons, policy shell
+components/          header, footer, cards, buy box, forms, icons, policy shell, product gallery, assistant
 lib/site.ts          business details, WhatsApp helper, GHS formatter
 lib/catalogue.ts     5 categories + fallback sample products
 lib/products.ts      product reads (Supabase, falling back to the sample file)
+lib/assistant.ts     assistant rules: products, categories, policies, order status
 lib/admin/           server-only admin queries + product/CSV validation
 lib/promos.ts        cached banner read (used by the site header)
 lib/cart.ts          localStorage cart (key: fa_cart)
-lib/supabase/        server-only Supabase clients (read, cookie, service-role)
+lib/supabase/        server-only Supabase clients (read, cookie, service-role, roles/permissions)
 middleware.ts        gates /admin, refreshes the admin session
 supabase/            schema + seed SQL (run once in the dashboard)
 public/              logo, flyer, generated images (images/*.webp)
+artwork/             PNG originals behind public/images/*.webp (local only)
+docs/screenshots/    phone-width review captures (local only)
 ```
 
 ## Editing the shop
@@ -59,21 +68,29 @@ then the shop uses `PRODUCTS` in `lib/catalogue.ts` (the same 18 sample items).
   `category` must match one of their slugs.
 - Images can be a path (`/images/p-ac.webp`) or an uploaded photo's public URL;
   the dashboard uploads to the `product-images` bucket in Supabase Storage.
+  A product can carry up to **five photos**: the first is the main image on
+  cards and feeds, the rest show as thumbnails on the product page.
 - Home, product pages and the sitemap revalidate every 60 seconds; `/shop`
   reads on each request.
 
-The catalogue is **sample data**. Replace prices, stock claims and images with
-verified information before launch, and remove the "Sample" badges in
-`components/product-card.tsx` and `app/product/[slug]/page.tsx` when you do.
+The catalogue is **sample data**. Each product has a `verified` flag (admin
+checkbox **Real price and stock**). While it is false, the shop labels the item
+"Sample", shows the price as an "Example price", hides any comparison discount,
+and sends buyers to "Check price & availability" instead of a firm add-to-cart.
+Tick the box only once the price and stock are real. Prices, stock claims and
+images should still be checked before launch.
 
 ## Using the dashboard
 
 Sign in at `/admin`, then:
 
 - **Products → Add product / edit.** One form for everything: price in cedis,
-  specs one per line (`Label: Value`), and a photo file up to 5 MB. Saving a
-  photo stores it in Supabase and replaces the image path. Slug is fixed for
-  edits, so existing links keep working.
+  specs one per line (`Label: Value`), and up to five photos (max 5 MB each).
+  When editing, the current photos show as thumbnails: untick one to delete it
+  (the stored file is removed too), or add new files to keep it and append.
+  Leave the main image blank to use the first photo. Slug is fixed for edits, so
+  existing links keep working. Leave **Real price and stock** unticked while the
+  price is an example.
 - **Import.** Download `public/products-import-template.csv`, fill it, then
   upload or paste it. The preview shows which rows are valid before anything is
   written; valid rows are upserted on slug, bad rows are listed and skipped.
@@ -81,14 +98,54 @@ Sign in at `/admin`, then:
   catalogue (not from the browser). Set New → Confirmed → Delivered, and print
   an **Invoice** (for the customer to pay) or a **Receipt** (payment received).
   Print with the button, or use the browser's own print dialog. Receipts say
-  "payment not confirmed" until the order is Confirmed or Delivered.
+  "payment not confirmed" until the order is Confirmed or Delivered. Both
+  documents carry the shop logo, the contact details from **Settings**, and the
+  signature block (signature image and signatory name when set).
+- **Settings** (admins only). Change the phone, both WhatsApp numbers, email and
+  address shown across the site, plus the signatory name and an optional
+  signature image for invoices and receipts. Changes apply immediately. The
+  logo is `public/logo.png` — replace that file to change it.
 - **Promotions.** The newest active message becomes a gold banner across the
   site (updates within a minute). Deactivate to remove it; old ones stay for
-  reference.
+  reference. The banner does not change any price — state the eligible products,
+  end date and terms in the message, and only activate offers you can honour.
+- **Team** (admins only). Create an account for a coworker with a temporary
+  password, pick **Staff** or **Admin**, and tick the dashboard areas a Staff
+  account may use: products, orders, promotions, shop settings. Admins hold all
+  areas plus account management. You cannot change your own role, so an admin
+  can never lock themselves out by accident.
 - **Feed.** `/feed.xml` lists active products in Google Merchant format.
+
+Roles live in the user's `app_metadata.role` (`admin` or `staff`) and, for
+staff, the allowed areas in `app_metadata.perms`. Only the server can write
+them — a signed-in user cannot promote themselves. Staff accounts created before
+permissions existed keep products, orders and promotions. Public sign-ups are
+turned off, so the only way in is an admin-created account; a signed-in account
+with no role sees a "No access" card instead of the shop.
 
 The header of the dashboard shows the same public pages as customers see; use
 the links in the black bar to move between sections.
+
+## Shop assistant
+
+Every public page has an **Ask F.A** button. It answers from the live catalogue
+and shop settings: a product's price and warranty by name, a category list,
+delivery, payment, returns, location, and order status. For an order it needs
+the order number **and** the phone used — refs are guessable, so the phone must
+match before anything is shown.
+
+It asks which language to use the first time it opens — English, Twi, French or
+Spanish — and answers in that language from then on (the small language button
+in its header changes it). Canned answers, link labels, order statuses, the
+greeting and the suggestion buttons are translated; product names, specs and the
+short descriptions stored in the database stay as entered. The chat header and
+WhatsApp link are English.
+
+Unmatched questions go to Google Gemini (free tier) only when `GEMINI_API_KEY`
+is set in the environment; without a key the assistant still answers the common
+questions and points to WhatsApp. Order lookups never go to Google, the route is
+same-origin only and limited to 20 messages a minute per IP, and the widget is
+hidden inside `/admin` and on printed invoices.
 
 ## Admin setup
 
@@ -97,10 +154,16 @@ make it work:
 
 1. Create a project at supabase.com (free tier is enough to start).
 2. In the SQL editor, run `supabase/migrations/001_init.sql`, then
-   `supabase/migrations/002_admin.sql`, then `supabase/seed.sql`. The second file
-   adds orders, promotions and the `product-images` storage bucket.
+   `supabase/migrations/002_admin.sql`, then `supabase/migrations/003_verified.sql`,
+   `supabase/migrations/004_settings.sql` and `supabase/migrations/005_product_images.sql`,
+   then `supabase/seed.sql`. The second file adds orders, promotions and the
+   `product-images` storage bucket; the third adds the `verified` column; the
+   fourth adds the editable shop settings row; the fifth adds the product photo
+   list (up to five).
 3. Authentication → Users → Add user: the admin's email and a strong password,
-   auto-confirm the user.
+   auto-confirm the user. Then edit that user's **App metadata** (raw JSON) to
+   `{"role": "admin"}`. Authentication → Providers → Email: turn **off** "Allow
+   new users to sign up" — accounts are created from the Team page instead.
 4. In Project Settings → API, copy the project URL, the publishable (anon) key
    and the **service_role** key. Put all three in `.env.local` (local) and in
    Vercel's environment variables:
@@ -117,8 +180,9 @@ key is not reachable by a visitor.
 
 Notes: the free tier pauses a project after a week of low activity (data is kept;
 resume it from the dashboard within a year) and keeps no scheduled backups. See
-Free tier below for the fixes. Passwords are reset from the Supabase dashboard,
-not from the site.
+Free tier below for the fixes. A coworker who forgets their password is reset
+from Supabase → Authentication → Users (there is no self-service reset, because
+the shop has no mail service on the free tier).
 
 ## Free tier
 
@@ -164,7 +228,8 @@ Confirmed on WhatsApp when payment is agreed, then Delivered when handed over.
 The reference (`FA-YYMM-NNNN`) is shown to the customer and on the invoice.
 
 Order records are only visible to signed-in admins; the public key cannot read
-them. To change numbers or email, edit `BUSINESS` in `lib/site.ts`.
+them. Phone, WhatsApp numbers, email, address and the document signatory are
+edited in **Admin → Settings** (admins only).
 
 ## Deploy (when you are ready)
 

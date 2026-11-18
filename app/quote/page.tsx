@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { WhatsApp } from "@/components/icons";
 
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
   description: "Request a quote for products, bulk orders, IT services or equipment from F.A TECHNOLOGIES in Kumasi.",
 };
 
-export default function Quote() {
+export default async function Quote() {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -52,16 +54,16 @@ export default function Quote() {
                 <li>Payment and delivery are arranged and confirmed.</li>
               </ol>
               <p className="form-note">
-                Urgent? Call <a href={BUSINESS.phoneHref} style={{ textDecoration: "underline" }}>{BUSINESS.phone}</a> or
+                Urgent? Call <a href={contact.phoneHref} style={{ textDecoration: "underline" }}>{contact.phone}</a> or
                 message us directly.
               </p>
               <a
                 className="btn btn--wa btn--sm"
-                href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like a quote.")}
+                href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like a quote.")}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <WhatsApp size={16} /> WhatsApp {BUSINESS.whatsapp[0].label}
+                <WhatsApp size={16} /> WhatsApp {contact.whatsapp[0].label}
               </a>
             </div>
             <p className="form-note" style={{ marginTop: 14 }}>

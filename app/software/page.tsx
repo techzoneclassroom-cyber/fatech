@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { Code, WhatsApp } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -25,7 +26,8 @@ const STEPS = [
   ["05", "Launch & support", "Deployment, handover and a support arrangement you can budget for."],
 ];
 
-export default function Software() {
+export default async function Software() {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -88,7 +90,7 @@ export default function Software() {
           <div className="band-actions">
             <a
               className="btn btn--wa"
-              href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like to discuss a software project.")}
+              href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like to discuss a software project.")}
               target="_blank"
               rel="noopener noreferrer"
             >

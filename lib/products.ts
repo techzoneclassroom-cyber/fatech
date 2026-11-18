@@ -15,7 +15,9 @@ type Row = {
   short: string;
   specs: unknown;
   image: string;
+  images?: string[] | null;
   featured: boolean;
+  verified: boolean;
 };
 
 const pair = (s: unknown): s is [string, string] =>
@@ -33,22 +35,29 @@ const toProduct = (r: Row): Product => ({
   short: r.short,
   specs: Array.isArray(r.specs) ? r.specs.filter(pair) : [],
   image: r.image,
+  images: Array.isArray(r.images) ? r.images.filter((s) => typeof s === "string") : [],
   featured: r.featured,
+  verified: r.verified,
 });
 
 // One query per request, shared by metadata and the page. Falls back until Supabase is configured.
 export const getProducts = cache(async (): Promise<Product[]> => {
   if (!isDbConfigured) return PRODUCTS;
 
-  const { data, error } = await supabaseRead()
+  const cols = "slug,name,category,brand,price_pesewas,compare_at_pesewas,condition,warranty,short,specs,image";
+  const query = (select: string) => supabaseRead()
     .from("products")
-    .select("slug,name,category,brand,price_pesewas,compare_at_pesewas,condition,warranty,short,specs,image,featured")
+    .select(select)
     .eq("active", true)
     .order("sort", { ascending: true })
     .order("name", { ascending: true });
 
+  let { data, error } = await query(`${cols},images,featured,verified`);
+  // Before 005_product_images.sql runs there is no images column; keep the shop working.
+  if (error) ({ data, error } = await query(`${cols},featured,verified`));
+
   if (error) throw new Error(`Could not load products: ${error.message}`);
-  return (data ?? []).map(toProduct);
+  return ((data ?? []) as unknown as Row[]).map(toProduct);
 });
 
 export async function getFeatured() {

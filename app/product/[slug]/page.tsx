@@ -6,6 +6,7 @@ import { getProducts } from "@/lib/products";
 import { ghs } from "@/lib/site";
 import { BuyBox } from "@/components/buy-box";
 import { ProductCard } from "@/components/product-card";
+import { ProductGallery } from "@/components/product-gallery";
 import { ArrowRight } from "@/components/icons";
 
 export const revalidate = 60;
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!p) return {};
   return {
     title: p.name,
-    description: `${p.short} ${p.brand} · ${categoryName(p.category)} from F.A TECHNOLOGIES, Kumasi. Sample item — confirm availability on WhatsApp.`,
+    description: `${p.short} ${p.brand} · ${categoryName(p.category)} from F.A TECHNOLOGIES, Kumasi. ${p.verified ? "Catalogue item — availability confirmed before payment." : "Sample item — confirm availability on WhatsApp."}`,
     openGraph: { title: p.name, description: p.short, images: [{ url: p.image }] },
   };
 }
@@ -32,7 +33,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!p) notFound();
 
   const related = all.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);
-  const save = p.was ? Math.round((1 - p.price / p.was) * 100) : 0;
+  const verified = Boolean(p.verified);
+  const save = verified && p.was ? Math.round((1 - p.price / p.was) * 100) : 0;
 
   return (
     <>
@@ -45,11 +47,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </nav>
 
         <div className="pdp">
-          <div className="pdp-media">
-            <img src={p.image} alt={`${p.name} — sample product image`} width={900} height={900} fetchPriority="high" />
-            <span className="tag-sample">Sample item</span>
-            {save > 0 && <span className="tag-save">−{save}%</span>}
-          </div>
+          <ProductGallery
+            images={p.images?.length ? p.images : [p.image]}
+            alt={verified ? p.name : `${p.name} — sample entry, representative image`}
+            sample={!verified}
+            save={save}
+          />
 
           <div>
             <span className="kicker">{categoryName(p.category)}</span>
@@ -62,15 +65,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
             <div className="pdp-price">
               {ghs(p.price)}
-              {p.was && <span className="was" style={{ fontSize: "1rem" }}>{ghs(p.was)}</span>}
+              {verified && p.was && <span className="was" style={{ fontSize: "1rem" }}>{ghs(p.was)}</span>}
             </div>
+            <p className="price-flag">
+              {verified
+                ? "Catalogue price — we still confirm availability before any payment."
+                : "Example price — not a confirmed purchase price. Ask us for the current price."}
+            </p>
             <p className="pdp-short">{p.short}</p>
 
-            <BuyBox product={{ id: p.slug, name: p.name, price: p.price }} />
+            <BuyBox product={{ id: p.slug, name: p.name, price: p.price, verified }} />
 
             <p className="form-note">
-              Sample item. We confirm the current price, condition, warranty and availability on WhatsApp
-              before any payment. Delivery is quoted separately based on your location.
+              {verified
+                ? "We confirm the condition, warranty and current availability on WhatsApp before any payment."
+                : "Sample entry. We confirm the current price, condition, warranty and availability on WhatsApp before any payment."}{" "}
+              Delivery is quoted separately based on your location.
             </p>
 
             <h2 style={{ fontSize: "1.05rem", margin: "26px 0 4px" }}>Specifications</h2>

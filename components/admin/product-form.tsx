@@ -58,14 +58,37 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         <textarea id="specs" name="specs" defaultValue={product?.specs.map(([a, b]) => `${a}: ${b}`).join("\n")} placeholder={"Processor: Intel Core i5\nRAM: 8 GB"} />
       </div>
 
+      {product?.images?.length ? (
+        <div className="field">
+          <span style={{ fontWeight: 600, fontSize: 13.5 }}>Current photos</span>
+          <p className="hint" style={{ margin: "4px 0 8px" }}>
+            Untick a photo to delete it from the product and the storage bucket. Ticked photos stay; new uploads are added
+            after them.
+          </p>
+          <div className="row-wrap" style={{ gap: 12 }}>
+            {product.images.map((url, i) => (
+              <label key={url} style={{ display: "flex", flexDirection: "column", gap: 6, width: 110, fontWeight: 500, fontSize: 12.5 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" width={110} height={110} style={{ objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+                <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="checkbox" name="keep" value={url} defaultChecked style={{ width: "auto" }} />
+                  {url === product.image ? "Main photo" : `Photo ${i + 1}`}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="image">Image path <span className="hint">(starts with /)</span></label>
+          <label htmlFor="image">Main image path <span className="hint">(starts with / or https://)</span></label>
           <input id="image" name="image" maxLength={300} defaultValue={product?.image} placeholder="/images/p-desktop.webp" />
         </div>
         <div className="field">
-          <label htmlFor="photo">Upload a photo <span className="hint">(JPG/PNG/WebP, max 5 MB — replaces the path)</span></label>
-          <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+          <label htmlFor="photos">Add photos <span className="hint">(JPG/PNG/WebP, max 5 MB each, 5 per product)</span></label>
+          <input id="photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+          <span className="hint">New photos are added after the remaining ones. If you leave the main image blank, the first photo is used.</span>
         </div>
       </div>
 
@@ -81,8 +104,16 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 600 }}>
             <input type="checkbox" name="active" defaultChecked={product?.active ?? true} style={{ width: "auto" }} /> Visible in the shop
           </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontWeight: 600 }}>
+            <input type="checkbox" name="verified" defaultChecked={product?.verified} style={{ width: "auto" }} /> Real price and stock
+          </label>
         </div>
       </div>
+
+      <p className="form-note" style={{ marginTop: 10 }}>
+        Leave <b>Real price and stock</b> unticked while the price is an example: the shop then labels the item
+        “Sample”, shows an example price and hides any discount badge.
+      </p>
 
       <button className="btn btn--dark" type="submit">{product ? "Save changes" : "Add product"}</button>
     </form>

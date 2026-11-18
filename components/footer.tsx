@@ -1,25 +1,26 @@
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import type { Contact } from "@/lib/contact";
 import { CATEGORIES } from "@/lib/catalogue";
 import { Mail, Phone, Pin, WhatsApp } from "./icons";
 
-export function Footer() {
+export function Footer({ contact }: { contact: Contact }) {
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer-grid">
           <div>
             <div className="brandline">F.A TECHNOLOGIES</div>
-            <div className="tagline">{BUSINESS.tagline}</div>
+            <div className="tagline">Digital, Secure and Reliable.</div>
             <div className="fcontact">
-              <a href={BUSINESS.phoneHref}><Phone size={15} /> {BUSINESS.phone}</a>
-              {BUSINESS.whatsapp.map((w) => (
+              <a href={contact.phoneHref}><Phone size={15} /> {contact.phone}</a>
+              {contact.whatsapp.map((w) => (
                 <a key={w.intl} href={waLink(w.intl, "Hello F.A TECHNOLOGIES")} target="_blank" rel="noopener noreferrer">
                   <WhatsApp size={15} /> {w.label}
                 </a>
               ))}
-              <a href={`mailto:${BUSINESS.email}`}><Mail size={15} /> {BUSINESS.email}</a>
-              <span><Pin size={15} /> {BUSINESS.location}</span>
+              <a href={`mailto:${contact.email}`}><Mail size={15} /> {contact.email}</a>
+              <span><Pin size={15} /> {contact.location}</span>
             </div>
           </div>
 
@@ -61,8 +62,8 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} F.A TECHNOLOGIES · {BUSINESS.location}</span>
-          <span>Prices in Ghana cedis (GHS). Sample catalogue until launch — availability is confirmed on WhatsApp.</span>
+          <span>© {new Date().getFullYear()} F.A TECHNOLOGIES · {contact.location}</span>
+          <span>Prices in Ghana cedis (GHS). Sample entries show example prices — price and availability are confirmed on WhatsApp.</span>
         </div>
       </div>
     </footer>

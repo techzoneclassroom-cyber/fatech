@@ -22,6 +22,7 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ q
       categoryName(p.category).toLowerCase().includes(term);
     return matchesCat && matchesTerm;
   });
+  const samples = list.filter((p) => !p.verified).length;
 
   const chipHref = (slug: string) => {
     const params = new URLSearchParams();
@@ -48,24 +49,36 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ q
           <form className="search" action="/shop" role="search">
             {cat && <input type="hidden" name="cat" value={cat} />}
             <label className="sr-only" htmlFor="q">Search products</label>
-            <input id="q" name="q" defaultValue={q} placeholder="Search by name, brand or category" />
-            <button className="btn btn--dark" type="submit"><Search size={16} /> Search</button>
+            <input id="q" name="q" defaultValue={q} placeholder="Search name, brand or category" enterKeyHint="search" />
+            <button className="btn btn--dark" type="submit"><Search size={16} /> <span className="search-label">Search</span></button>
           </form>
-          <span className="results">{list.length} of {all.length} sample items</span>
+          <div className="shop-meta">
+            <span className="results">
+              {list.length} of {all.length} items
+              {samples > 0 && <> · {samples} with example prices</>}
+            </span>
+            {q && <Link className="chip" href={chipHref(cat)}>Clear search</Link>}
+          </div>
         </div>
 
-        <div className="chips">
-          <Link href={chipHref("")} className={`chip${cat ? "" : " chip--active"}`}>All</Link>
+        <nav className="chips" aria-label="Product categories">
+          <Link href={chipHref("")} className={`chip${cat ? "" : " chip--active"}`} aria-current={cat ? undefined : "true"}>All</Link>
           {CATEGORIES.map((c) => (
-            <Link key={c.slug} href={chipHref(c.slug)} className={`chip${cat === c.slug ? " chip--active" : ""}`}>
+            <Link
+              key={c.slug}
+              href={chipHref(c.slug)}
+              className={`chip${cat === c.slug ? " chip--active" : ""}`}
+              aria-current={cat === c.slug ? "true" : undefined}
+            >
               {c.name}
             </Link>
           ))}
-        </div>
+        </nav>
 
         <p className="sample-note">
-          <strong>Sample catalogue.</strong> These items and prices are examples while the real stock is loaded.
-          Message us on WhatsApp to confirm current price, condition and availability.
+          <strong>Sample entries use example prices.</strong> Anything labelled <em>Sample</em> has not been
+          confirmed yet — message us on WhatsApp to check the current price, condition and availability.
+          Items without the label are real catalogue entries, still confirmed with you before payment.
         </p>
 
         {list.length ? (
@@ -75,7 +88,9 @@ export default async function Shop({ searchParams }: { searchParams: Promise<{ q
         ) : (
           <div className="empty">
             <h2>No matches</h2>
-            <p className="muted">Try another search, or ask us to source the item for you.</p>
+            <p className="muted">
+              {q ? <>Nothing matched “{q}”</> : "No items in this category yet"} — try another search, or ask us to source the item for you.
+            </p>
             <div className="row-wrap" style={{ justifyContent: "center" }}>
               <Link className="btn" href="/shop">Clear filters</Link>
               <Link className="btn btn--dark" href="/import">Request an import</Link>

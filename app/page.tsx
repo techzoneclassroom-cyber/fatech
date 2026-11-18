@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { CATEGORIES } from "@/lib/catalogue";
 import { getFeatured } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
@@ -20,6 +21,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const featured = await getFeatured();
+  const contact = await getContact();
   return (
     <>
       <section className="hero">
@@ -53,14 +55,14 @@ export default async function Home() {
             />
             <a
               className="hero-card"
-              href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I have a question.")}
+              href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I have a question.")}
               target="_blank"
               rel="noopener noreferrer"
             >
               <span className="ico"><WhatsApp size={22} /></span>
               <span>
                 <b>Chat with us on WhatsApp</b>
-                <small>{BUSINESS.phone} · quick answers on stock, prices and repairs</small>
+                <small>{contact.phone} · quick answers on stock, prices and repairs</small>
               </span>
             </a>
           </div>
@@ -98,7 +100,7 @@ export default async function Home() {
             <div>
               <span className="kicker">New in the shop</span>
               <h2>Popular picks</h2>
-              <p>Sample items while we load the live catalogue. Every price, warranty and spec is confirmed on WhatsApp before you pay.</p>
+              <p>Every price is confirmed on WhatsApp before you pay. Entries marked “Sample” show example prices, not a confirmed quote.</p>
             </div>
             <Link className="link-more" href="/shop">View the shop <ArrowRight size={15} /></Link>
           </div>
@@ -173,7 +175,7 @@ export default async function Home() {
           <div className="band-actions">
             <a
               className="btn btn--wa"
-              href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like some help.")}
+              href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like some help.")}
               target="_blank"
               rel="noopener noreferrer"
             >

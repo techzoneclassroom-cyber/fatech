@@ -19,6 +19,8 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
       <h1 style={{ fontSize: "1.5rem", margin: "0 0 6px" }}>Promotions</h1>
       <p className="muted" style={{ margin: "0 0 18px", fontSize: 13.5 }}>
         The newest active message shows as a banner above the header on every page, within a minute of saving.
+        The banner does not change any price: if you publish an offer, state the eligible products, the end date
+        and the terms inside the message, and only activate offers you can actually honour.
       </p>
 
       {(error || loadError || saved) && (

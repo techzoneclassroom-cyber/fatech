@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import type { Contact } from "@/lib/contact";
 import { NavLinks } from "./nav-links";
 import { NAV } from "@/lib/nav";
 import { Cart, Mail, Menu as MenuIcon, Phone, Pin, WhatsApp } from "./icons";
 import { Menu } from "./menu";
 import { getActivePromo } from "@/lib/promos";
 
-export async function Header() {
+export async function Header({ contact }: { contact: Contact }) {
   const promo = await getActivePromo();
   return (
     <>
@@ -14,15 +15,15 @@ export async function Header() {
       <div className="topbar">
         <div className="container">
           <div className="topbar-group">
-            <a href={BUSINESS.phoneHref}><Phone size={14} /> {BUSINESS.phone}</a>
-            <a href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES")} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+            <a href={contact.phoneHref}><Phone size={14} /> {contact.phone}</a>
+            <a href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES")} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
               <WhatsApp size={14} /> <span className="hide-sm">WhatsApp</span>
             </a>
-            <a className="hide-sm" href={`mailto:${BUSINESS.email}`}><Mail size={14} /> {BUSINESS.email}</a>
+            <a className="hide-sm" href={`mailto:${contact.email}`}><Mail size={14} /> {contact.email}</a>
           </div>
           <div className="topbar-group">
             <Link href="/repair">Track a repair</Link>
-            <span className="hide-sm"><Pin size={14} /> {BUSINESS.location}</span>
+            <span className="hide-sm"><Pin size={14} /> {contact.location}</span>
           </div>
         </div>
       </div>
@@ -66,7 +67,7 @@ export async function Header() {
                 <Link href="/faq">FAQ</Link>
                 <a
                   className="btn btn--wa"
-                  href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES")}
+                  href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES")}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

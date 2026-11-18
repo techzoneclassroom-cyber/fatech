@@ -46,6 +46,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <td>{ghs(p.price_pesewas)}</td>
                 <td>
                   {p.active ? "Live" : "Hidden"}
+                  {p.verified ? "" : " · Sample"}
                   {p.featured ? " · Home" : ""}
                 </td>
                 <td><Link href={`/admin/products/${p.slug}`} style={{ fontWeight: 700 }}>Edit</Link></td>

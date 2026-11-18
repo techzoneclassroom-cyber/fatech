@@ -2,19 +2,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { addItem } from "@/lib/cart";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { useContact } from "@/components/contact-provider";
 import { Check, WhatsApp } from "@/components/icons";
 
-type BuyProps = { id: string; name: string; price: number };
+type BuyProps = { id: string; name: string; price: number; verified: boolean };
 
 export function BuyBox({ product }: { product: BuyProps }) {
+  const contact = useContact();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
   const enquire = () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `Hello F.A TECHNOLOGIES, I'm interested in ${product.name}.${url ? ` Link: ${url}` : ""} Please confirm the price, condition, warranty and availability.`;
-    window.open(waLink(BUSINESS.whatsapp[0].intl, text), "_blank", "noopener,noreferrer");
+    const price = product.verified ? "" : ` The listed price (${(product.price / 100).toFixed(2)} GHS) is an example.`;
+    const text = `Hello F.A TECHNOLOGIES, I'm interested in ${product.name}.${price}${url ? ` Link: ${url}` : ""} Please confirm the price, condition, warranty and availability.`;
+    window.open(waLink(contact.whatsapp[0].intl, text), "_blank", "noopener,noreferrer");
+  };
+
+  const add = () => {
+    addItem({ id: product.id, name: product.name, price: product.price, sample: !product.verified }, qty);
+    setAdded(true);
   };
 
   return (
@@ -34,19 +42,28 @@ export function BuyBox({ product }: { product: BuyProps }) {
           />
           <button type="button" onClick={() => setQty((q) => Math.min(50, q + 1))} aria-label="Increase quantity">+</button>
         </div>
-        <button
-          className="btn"
-          type="button"
-          onClick={() => { addItem(product, qty); setAdded(true); }}
-        >
-          {added ? <><Check size={17} /> Added to cart</> : "Add to cart"}
-        </button>
-        <button className="btn btn--wa" type="button" onClick={enquire}>
-          <WhatsApp size={17} /> Ask on WhatsApp
-        </button>
+        {product.verified ? (
+          <>
+            <button className="btn" type="button" onClick={add}>
+              {added ? <><Check size={17} /> Added to cart</> : "Add to cart"}
+            </button>
+            <button className="btn btn--wa" type="button" onClick={enquire}>
+              <WhatsApp size={17} /> Ask on WhatsApp
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn--wa" type="button" onClick={enquire}>
+              <WhatsApp size={17} /> Check price &amp; availability
+            </button>
+            <button className="btn" type="button" onClick={add}>
+              {added ? <><Check size={17} /> Added to cart</> : "Add to cart (example price)"}
+            </button>
+          </>
+        )}
       </div>
       {added && (
-        <p className="form-note" style={{ marginBottom: 14 }}>
+        <p className="form-note" role="status" style={{ marginBottom: 14 }}>
           Added {qty} × {product.name}. <Link href="/cart" style={{ fontWeight: 700, textDecoration: "underline" }}>Go to cart</Link>
         </p>
       )}

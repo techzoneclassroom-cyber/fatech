@@ -1,19 +1,23 @@
 import type { Order } from "@/lib/admin/data";
-import { BUSINESS, ghs } from "@/lib/site";
+import type { Contact } from "@/lib/contact";
+import { ghs } from "@/lib/site";
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-export function OrderDoc({ order, doc }: { order: Order; doc: "invoice" | "receipt" }) {
+export function OrderDoc({ order, doc, contact }: { order: Order; doc: "invoice" | "receipt"; contact: Contact }) {
   const paid = order.status === "confirmed" || order.status === "delivered";
   const total = order.items.reduce((s, i) => s + i.price_pesewas * i.qty, 0);
 
   return (
     <article className="order-doc">
       <header className="doc-head">
-        <div>
-          <b className="doc-brand">{BUSINESS.name}</b>
-          <p>{BUSINESS.location}<br />{BUSINESS.phone} · {BUSINESS.email}</p>
+        <div className="doc-identity">
+          <img className="doc-logo" src="/logo.png" alt="" />
+          <div>
+            <b className="doc-brand">F.A TECHNOLOGIES</b>
+            <p>{contact.location}<br />{contact.phone} · {contact.email}</p>
+          </div>
         </div>
         <div className="doc-title">
           <h1>{doc === "receipt" ? "Receipt" : "Invoice"}</h1>
@@ -52,7 +56,19 @@ export function OrderDoc({ order, doc }: { order: Order; doc: "invoice" | "recei
           ? paid ? "Payment received. Thank you for your business." : "Payment has not been confirmed yet — this copy is marked unpaid."
           : "Amount due on delivery or by mobile money. Delivery cost is quoted on WhatsApp before payment."}
       </p>
-      <p className="doc-foot">Prices are in Ghana cedis. {BUSINESS.tagline}</p>
+
+      {/* The block always prints, so a copy without an uploaded signature still has a line to sign. */}
+      <div className="doc-sign">
+        <span className="doc-sign-line">
+          {contact.signatureUrl
+            ? <img src={contact.signatureUrl} alt={contact.signatory ? `Signature of ${contact.signatory}` : "Authorised signature"} />
+            : null}
+        </span>
+        <b>{contact.signatory || "Authorised signature"}</b>
+        <small>For F.A TECHNOLOGIES</small>
+      </div>
+
+      <p className="doc-foot">Prices are in Ghana cedis. Digital, Secure and Reliable.</p>
     </article>
   );
 }

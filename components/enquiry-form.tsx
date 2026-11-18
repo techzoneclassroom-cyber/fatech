@@ -1,7 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { useContact } from "@/components/contact-provider";
 import { WhatsApp } from "./icons";
 
 export type Field = {
@@ -21,6 +22,7 @@ export type Field = {
 type Props = { subject: string; fields: Field[]; submitLabel?: string; note?: string };
 
 export function EnquiryForm({ subject, fields, submitLabel = "Send on WhatsApp", note }: Props) {
+  const contact = useContact();
   const formRef = useRef<HTMLFormElement>(null);
   const [sent, setSent] = useState<{ intl: string; text: string } | null>(null);
 
@@ -66,7 +68,7 @@ export function EnquiryForm({ subject, fields, submitLabel = "Send on WhatsApp",
     <form
       ref={formRef}
       className="form"
-      onSubmit={(e) => { e.preventDefault(); send(BUSINESS.whatsapp[0].intl); }}
+      onSubmit={(e) => { e.preventDefault(); send(contact.whatsapp[0].intl); }}
     >
       {half.length > 0 && (
         <div className="form-grid">
@@ -90,8 +92,8 @@ export function EnquiryForm({ subject, fields, submitLabel = "Send on WhatsApp",
         <WhatsApp size={18} /> {submitLabel}
       </button>
       <p className="form-note">
-        This opens WhatsApp with your request written out, addressed to {BUSINESS.whatsapp[0].label}.
-        You can also send it to {BUSINESS.whatsapp[1].label} on WhatsApp.
+        This opens WhatsApp with your request written out, addressed to {contact.whatsapp[0].label}.
+        You can also send it to {contact.whatsapp[1].label} on WhatsApp.
       </p>
       {sent && (
         <p className="form-note">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { Check, Mail, Phone, Pin, Store, WhatsApp } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -8,7 +9,8 @@ export const metadata: Metadata = {
   description: "F.A TECHNOLOGIES is an IT equipment, electronics and technology services business based in Kumasi–Kwadaso, Ghana.",
 };
 
-export default function About() {
+export default async function About() {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -38,7 +40,7 @@ export default function About() {
               </p>
               <div className="stack" style={{ marginTop: 18 }}>
                 <span className="row-wrap" style={{ alignItems: "center", gap: 8, fontSize: 14 }}>
-                  <Check size={16} /> <span>Based at {BUSINESS.location}</span>
+                  <Check size={16} /> <span>Based at {contact.location}</span>
                 </span>
                 <span className="row-wrap" style={{ alignItems: "center", gap: 8, fontSize: 14 }}>
                   <Check size={16} /> <span>Order and book by phone or WhatsApp</span>
@@ -50,7 +52,7 @@ export default function About() {
               <div className="row-wrap" style={{ marginTop: 22 }}>
                 <a
                   className="btn btn--wa"
-                  href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like to know more about your business.")}
+                  href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like to know more about your business.")}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -112,17 +114,17 @@ export default function About() {
             <div className="contact-card">
               <span className="ico"><Pin size={20} /></span>
               <b>Location</b>
-              <span>{BUSINESS.location}</span>
+              <span>{contact.location}</span>
             </div>
             <div className="contact-card">
               <span className="ico"><Phone size={20} /></span>
               <b>Call</b>
-              <a href={BUSINESS.phoneHref}>{BUSINESS.phone}</a>
+              <a href={contact.phoneHref}>{contact.phone}</a>
             </div>
             <div className="contact-card">
               <span className="ico"><Mail size={20} /></span>
               <b>Email</b>
-              <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a>
+              <a href={`mailto:${contact.email}`}>{contact.email}</a>
             </div>
             <div className="contact-card">
               <span className="ico"><Store size={20} /></span>

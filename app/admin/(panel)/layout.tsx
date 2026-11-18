@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isDbConfigured, supabaseServer } from "@/lib/supabase/server";
-import { isAdminConfigured } from "@/lib/supabase/admin";
+import { isAdminConfigured, permsOf, roleOf } from "@/lib/supabase/admin";
 import { signOut } from "../actions";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -30,13 +30,33 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     );
   }
 
-  let user: { email?: string | null } | null = null;
+  let user: { id: string; email?: string | null; app_metadata?: Record<string, unknown> } | null = null;
   try {
     user = (await (await supabaseServer()).auth.getUser()).data.user;
   } catch {
     // Fail closed: an unreachable auth server must not open the dashboard.
   }
   if (!user) redirect("/admin/login");
+
+  // Signing up is disabled, but a role check keeps any stray account out of the dashboard.
+  const role = roleOf(user);
+  const perms = permsOf(user);
+  if (!role) {
+    return (
+      <div className="container" style={{ paddingBlock: 48 }}>
+        <div className="form-card" style={{ maxWidth: 560 }}>
+          <p className="kicker">No access</p>
+          <h1 style={{ fontSize: "1.4rem", margin: "6px 0 10px" }}>This account has no dashboard role</h1>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Ask an admin to add <b>{user.email}</b> as staff, then sign in again.
+          </p>
+          <form action={signOut}>
+            <button className="btn btn--sm" type="submit">Sign out</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -45,13 +65,15 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <b>F.A TECHNOLOGIES <span className="admin-tag">Admin</span></b>
           <nav className="admin-nav" aria-label="Admin">
             <Link href="/admin">Dashboard</Link>
-            <Link href="/admin/products">Products</Link>
-            <Link href="/admin/orders">Orders</Link>
-            <Link href="/admin/import">Import</Link>
-            <Link href="/admin/promotions">Promotions</Link>
+            {perms.includes("products") && <Link href="/admin/products">Products</Link>}
+            {perms.includes("orders") && <Link href="/admin/orders">Orders</Link>}
+            {perms.includes("products") && <Link href="/admin/import">Import</Link>}
+            {perms.includes("promotions") && <Link href="/admin/promotions">Promotions</Link>}
+            {perms.includes("settings") && <Link href="/admin/settings">Settings</Link>}
+            {role === "admin" && <Link href="/admin/team">Team</Link>}
           </nav>
           <div className="admin-tools">
-            <span className="admin-who">{user.email}</span>
+            <span className="admin-who">{user.email} · {role}</span>
             <form action={signOut}>
               <button className="btn btn--sm" type="submit">Sign out</button>
             </form>

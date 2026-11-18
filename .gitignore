@@ -3,6 +3,8 @@
 node_modules
 .next
 m-*.png
+artwork/
+docs/
 
 .vercel
-.env*
+tsconfig.tsbuildinfo

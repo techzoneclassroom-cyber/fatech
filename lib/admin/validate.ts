@@ -16,14 +16,17 @@ export type ProductRow = {
   short: string;
   specs: [string, string][];
   image: string;
+  // Up to five photos, main image first. `image` mirrors images[0].
+  images: string[];
   featured: boolean;
   active: boolean;
+  verified: boolean;
   sort: number;
 };
 
 export const IMPORT_COLUMNS = [
   "slug", "name", "category", "brand", "price", "compare_at", "condition",
-  "warranty", "short", "specs", "image", "featured", "active", "sort",
+  "warranty", "short", "specs", "image", "featured", "active", "verified", "sort",
 ];
 
 const CATS = CATEGORIES.map((c) => c.slug);
@@ -74,6 +77,12 @@ export function productRow(f: Fields): { row: ProductRow | null; error: string }
     return { row: null, error: "Image must start with / (a file in public) or https://." };
   }
 
+  const images = (f.images ?? "").split(/[\n,]+/).map((v) => v.trim()).filter(Boolean).slice(0, 5);
+  if (images.some((v) => !v.startsWith("/") && !v.startsWith("https://"))) {
+    return { row: null, error: "Each photo must start with / (a file in public) or https://." };
+  }
+  if (!images.length) images.push(image);
+
   return {
     row: {
       slug,
@@ -87,8 +96,10 @@ export function productRow(f: Fields): { row: ProductRow | null; error: string }
       short: (f.short ?? "").trim().slice(0, 300),
       specs: specLines(f.specs ?? ""),
       image,
+      images,
       featured: flag(f.featured, false),
       active: flag(f.active, true),
+      verified: flag(f.verified, false),
       sort: Math.min(9999, Math.max(0, Number.parseInt(f.sort ?? "", 10) || 100)),
     },
     error: "",

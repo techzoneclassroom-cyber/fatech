@@ -1,4 +1,7 @@
-export type CartItem = { id: string; name: string; price: number; qty: number };
+export type CartItem = { id: string; name: string; price: number; qty: number; sample?: boolean };
+
+// Old carts have no `sample` field; those were all sample prices, so treat missing as sample.
+export const isSample = (i: CartItem) => i.sample !== false;
 
 const KEY = "fa_cart";
 
@@ -22,7 +25,7 @@ export function writeCart(items: CartItem[]) {
   localStorage.setItem(KEY, JSON.stringify(items));
 }
 
-export function addItem(p: { id: string; name: string; price: number }, qty = 1) {
+export function addItem(p: { id: string; name: string; price: number; sample?: boolean }, qty = 1) {
   const cart = readCart();
   const found = cart.find((x) => x.id === p.id);
   if (found) found.qty = Math.min(50, found.qty + qty);

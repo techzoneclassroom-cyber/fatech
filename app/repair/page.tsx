@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EnquiryForm } from "@/components/enquiry-form";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { WhatsApp } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
   description: "Book a computer, laptop or device repair with F.A TECHNOLOGIES in Kumasi and check the status using your repair reference.",
 };
 
-export default function RepairPage() {
+export default async function RepairPage() {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -63,10 +65,10 @@ export default function RepairPage() {
 
             <div className="notice" style={{ marginTop: 18 }}>
               <span>
-                <strong>Urgent?</strong> Call <a href={BUSINESS.phoneHref} style={{ textDecoration: "underline" }}>{BUSINESS.phone}</a> or
+                <strong>Urgent?</strong> Call <a href={contact.phoneHref} style={{ textDecoration: "underline" }}>{contact.phone}</a> or
                 WhatsApp us on{" "}
-                <a href={waLink(BUSINESS.whatsapp[1].intl, "Hello F.A TECHNOLOGIES, I need urgent repair help.")} style={{ textDecoration: "underline" }} target="_blank" rel="noopener noreferrer">
-                  {BUSINESS.whatsapp[1].label}
+                <a href={waLink(contact.whatsapp[1].intl, "Hello F.A TECHNOLOGIES, I need urgent repair help.")} style={{ textDecoration: "underline" }} target="_blank" rel="noopener noreferrer">
+                  {contact.whatsapp[1].label}
                 </a>.
               </span>
             </div>
@@ -74,7 +76,7 @@ export default function RepairPage() {
             <a
               className="btn btn--wa btn--sm"
               style={{ marginTop: 16 }}
-              href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I have a repair question.")}
+              href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I have a repair question.")}
               target="_blank"
               rel="noopener noreferrer"
             >

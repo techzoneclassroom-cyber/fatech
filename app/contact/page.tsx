@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { getContact } from "@/lib/contact-server";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { Mail, Phone, Pin, WhatsApp } from "@/components/icons";
 
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
   description: "Contact F.A TECHNOLOGIES in Kumasi–Kwadaso by phone, WhatsApp or email for products, repairs, quotes and IT services.",
 };
 
-export default function Contact() {
+export default async function Contact() {
+  const contact = await getContact();
   return (
     <>
       <div className="page-head">
@@ -27,9 +29,9 @@ export default function Contact() {
           <div className="contact-card">
             <span className="ico"><Phone size={20} /></span>
             <b>Call us</b>
-            <a href={BUSINESS.phoneHref}>{BUSINESS.phone}</a>
+            <a href={contact.phoneHref}>{contact.phone}</a>
           </div>
-          {BUSINESS.whatsapp.map((w) => (
+          {contact.whatsapp.map((w) => (
             <div className="contact-card" key={w.intl}>
               <span className="ico"><WhatsApp size={20} /></span>
               <b>WhatsApp</b>
@@ -39,12 +41,12 @@ export default function Contact() {
           <div className="contact-card">
             <span className="ico"><Mail size={20} /></span>
             <b>Email</b>
-            <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a>
+            <a href={`mailto:${contact.email}`}>{contact.email}</a>
           </div>
           <div className="contact-card">
             <span className="ico"><Pin size={20} /></span>
             <b>Visit</b>
-            <span>{BUSINESS.location}</span>
+            <span>{contact.location}</span>
           </div>
         </div>
 
@@ -71,7 +73,7 @@ export default function Contact() {
             <div className="form-card">
               <h2 style={{ marginTop: 0, fontSize: "1.2rem" }}>Visiting the shop</h2>
               <p className="muted" style={{ fontSize: 14, marginTop: 4 }}>
-                We are at <strong>{BUSINESS.location}</strong>. Call or message before you come for a repair or a
+                We are at <strong>{contact.location}</strong>. Call or message before you come for a repair or a
                 collection so we can have the item or technician ready.
               </p>
               <p className="form-note">
@@ -79,10 +81,10 @@ export default function Contact() {
                 For network or CCTV site visits, send your location on WhatsApp and we will confirm the arrangement.
               </p>
               <div className="row-wrap">
-                <a className="btn btn--wa btn--sm" href={waLink(BUSINESS.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like directions to your shop.")} target="_blank" rel="noopener noreferrer">
+                <a className="btn btn--wa btn--sm" href={waLink(contact.whatsapp[0].intl, "Hello F.A TECHNOLOGIES, I would like directions to your shop.")} target="_blank" rel="noopener noreferrer">
                   <WhatsApp size={16} /> Ask for directions
                 </a>
-                <a className="btn btn--dark btn--sm" href={BUSINESS.phoneHref}>Call {BUSINESS.phone}</a>
+                <a className="btn btn--dark btn--sm" href={contact.phoneHref}>Call {contact.phone}</a>
               </div>
             </div>
 

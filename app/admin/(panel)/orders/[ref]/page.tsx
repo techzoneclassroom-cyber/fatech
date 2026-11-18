@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/admin/data";
+import { getContact } from "@/lib/contact-server";
 import { setOrderStatus } from "@/app/admin/actions";
 import { OrderDoc } from "@/components/admin/order-doc";
 import { PrintButton } from "@/components/print-button";
@@ -21,13 +22,14 @@ export default async function OrderPage({
   if (!order) notFound();
 
   if (doc === "invoice" || doc === "receipt") {
+    const contact = await getContact();
     return (
       <>
         <div className="no-print" style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
           <p className="form-note" style={{ margin: 0 }}><Link href={`/admin/orders/${order.ref}`}>← Back to order</Link></p>
           <PrintButton />
         </div>
-        <OrderDoc order={order} doc={doc} />
+        <OrderDoc order={order} doc={doc} contact={contact} />
       </>
     );
   }
