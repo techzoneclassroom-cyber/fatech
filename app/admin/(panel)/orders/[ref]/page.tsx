@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/admin/data";
 import { getContact } from "@/lib/contact-server";
-import { setOrderStatus } from "@/app/admin/actions";
+import { setOrderStatus, deleteOrder } from "@/app/admin/actions";
+import { ConfirmSubmit } from "@/components/admin/confirm-submit";
 import { OrderDoc } from "@/components/admin/order-doc";
 import { PrintButton } from "@/components/print-button";
 import { ghs } from "@/lib/site";
@@ -67,6 +68,13 @@ export default async function OrderPage({
             </select>
           </div>
           <button className="btn btn--dark btn--sm" type="submit">Update order</button>
+        </form>
+
+        <form action={deleteOrder} style={{ marginTop: 14 }}>
+          <input type="hidden" name="ref" value={order.ref} />
+          <ConfirmSubmit className="btn btn--sm" message={`Delete order ${order.ref}? It cannot be recovered, and its invoice or receipt link will stop working.`}>
+            Delete order
+          </ConfirmSubmit>
         </form>
       </div>
 

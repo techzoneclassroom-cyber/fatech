@@ -9,6 +9,34 @@ type Lang = "en" | "tw" | "fr" | "es";
 
 const LANGS: [Lang, string][] = [["en", "English"], ["tw", "Twi"], ["fr", "Français"], ["es", "Español"]];
 
+// Browser voices: Twi (ak-GH) is rare, so the device's default voice reads it.
+const SPOKEN: Record<Lang, string> = { en: "en-GB", tw: "ak-GH", fr: "fr-FR", es: "es-ES" };
+const FEMALE = /female|woman|zira|hazel|susan|samantha|karen|moira|tessa|fiona|serena|amelie|julie|monica|paulina|helena/i;
+
+// Prefer a Ghanaian/African English voice, then a female one, for a calm tone.
+const pickVoice = (voices: SpeechSynthesisVoice[], l: Lang) => {
+  const african = voices.find((v) => /^en[-_](GH|NG|KE|ZA|TZ|UG)/i.test(v.lang));
+  const akan = voices.find((v) => /^ak/i.test(v.lang));
+  const same = voices.filter((v) => v.lang.toLowerCase().startsWith(SPOKEN[l].slice(0, 2)));
+  if (l === "tw") return akan ?? african ?? same[0] ?? null;
+  if (l === "en") return african ?? same.find((v) => FEMALE.test(v.name)) ?? same[0] ?? null;
+  return same.find((v) => FEMALE.test(v.name)) ?? same[0] ?? null;
+};
+
+// Language-native voices via our own /api/tts (Google TTS; it has no Twi voice).
+const ttsUrl = (text: string, l: Lang) => `/api/tts?lang=${l}&text=${encodeURIComponent(text)}`;
+
+// Google TTS rejects requests over ~200 chars.
+const chunks = (text: string, max = 180) => {
+  const out: string[] = [];
+  for (const w of text.split(/\s+/)) {
+    const last = out.length - 1;
+    if (last >= 0 && out[last].length + w.length + 1 <= max) out[last] += " " + w;
+    else out.push(w);
+  }
+  return out;
+};
+
 const UI: Record<Lang, { hello: string; chips: string[]; fail: string }> = {
   en: {
     hello: "Hello! Ask me about a product price, delivery, warranty, our location, or an order (send the order number with the phone you used).",
@@ -37,21 +65,35 @@ export function Assistant() {
   const contact = useContact();
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<Lang | null>(null);
+  const [canSpeak, setCanSpeak] = useState(false);
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const log = useRef<HTMLDivElement>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const queue = useRef<string[]>([]);
+
+  const stop = () => {
+    queue.current = [];
+    audio.current?.pause();
+    window.speechSynthesis?.cancel();
+  };
 
   useEffect(() => {
     log.current?.scrollTo({ top: log.current.scrollHeight });
   }, [msgs, open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      stop();
+      return;
+    }
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
+
+  useEffect(() => setCanSpeak("speechSynthesis" in window), []);
 
   // The dashboard has its own tools; no floating chat there.
   if (path.startsWith("/admin")) return null;
@@ -59,8 +101,43 @@ export function Assistant() {
   const ui = UI[lang ?? "en"];
 
   const pick = (id: Lang) => {
+    stop();
     setLang(id);
     setMsgs([{ from: "fa", text: UI[id].hello }]);
+  };
+
+  const speakLocal = (text: string) => {
+    if (!canSpeak) return;
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const l = lang ?? "en";
+    u.lang = SPOKEN[l];
+    u.rate = 0.95; // calm pace
+    const v = pickVoice(synth.getVoices(), l);
+    if (v) u.voice = v;
+    synth.speak(u);
+  };
+
+  const next = () => {
+    const part = queue.current.shift();
+    if (!part) return;
+    const a = (audio.current ??= new Audio());
+    a.src = ttsUrl(part, lang ?? "en");
+    a.play().catch(() => {
+      const rest = [part, ...queue.current].join(" ");
+      queue.current = [];
+      speakLocal(rest); // offline or rate-limited: fall back to the device voice
+    });
+  };
+
+  const speak = (text: string) => {
+    stop();
+    if ((lang ?? "en") === "tw") return speakLocal(text);
+    queue.current = chunks(text);
+    const a = (audio.current ??= new Audio());
+    a.onended = next;
+    next();
   };
 
   const send = async (text: string) => {
@@ -88,15 +165,19 @@ export function Assistant() {
   return (
     <>
       <button type="button" className="assist-fab no-print" aria-expanded={open} aria-controls="assist-panel" aria-label={open ? "Close assistant" : "Ask F.A"} onClick={() => setOpen(!open)}>
+        <img className="assist-avatar" src="/agent.webp" alt="" width={30} height={30} />
         Ask F.A
       </button>
 
       {open && (
         <section id="assist-panel" className="assist-panel no-print" role="dialog" aria-label="Shop assistant">
           <header className="assist-head">
-            <span><b>F.A assistant</b><small>Prices, delivery, orders</small></span>
+            <span className="assist-id">
+              <img className="assist-avatar" src="/agent.webp" alt="" width={40} height={40} />
+              <span><b>F.A assistant</b><small>Prices, delivery, orders</small></span>
+            </span>
             {lang && (
-              <button type="button" className="assist-chip" onClick={() => setLang(null)} aria-label="Change language">
+              <button type="button" className="assist-chip" onClick={() => { setLang(null); stop(); }} aria-label="Change language">
                 {lang.toUpperCase()}
               </button>
             )}
@@ -120,6 +201,9 @@ export function Assistant() {
                     {m.text}
                     {m.href && (
                       <a href={m.href} className="assist-link">{m.label ?? "Open"}</a>
+                    )}
+                    {m.from === "fa" && (
+                      <button type="button" className="assist-read" onClick={() => speak(m.text)} aria-label="Read this answer aloud">Listen</button>
                     )}
                   </p>
                 ))}

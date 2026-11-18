@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 const label: Record<string, string> = { new: "New", confirmed: "Confirmed", delivered: "Delivered", cancelled: "Cancelled" };
 
-export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ error?: string; deleted?: string }> }) {
+  const { error, deleted } = await searchParams;
   let orders: Awaited<ReturnType<typeof listOrders>> = [];
   let loadError = "";
   try {
@@ -23,7 +23,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         Orders are saved when a customer sends the cart on WhatsApp. Payment is still confirmed on WhatsApp.
       </p>
 
-      {(error || loadError) && <p className="notice" role="alert" style={{ marginBottom: 16 }}>{error ?? loadError}</p>}
+      {(error || loadError || deleted) && (
+        <p className="notice" role={error || loadError ? "alert" : "status"} style={{ marginBottom: 16 }}>
+          {error ?? loadError ?? `Order ${deleted} deleted.`}
+        </p>
+      )}
 
       <div className="table-wrap">
         <table className="admin-table">

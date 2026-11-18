@@ -661,9 +661,14 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
 /* ---------- Shop assistant ---------- */
 .assist-fab {
   position: fixed; right: 18px; bottom: 18px; z-index: 90;
+  display: flex; align-items: center; gap: 8px;
   background: var(--black); color: #fff; border: 0; border-radius: 999px;
-  padding: 12px 20px; font-weight: 700; box-shadow: var(--shadow); cursor: pointer;
+  padding: 7px 18px 7px 7px; font-weight: 700; box-shadow: var(--shadow); cursor: pointer;
 }
+.assist-avatar { border-radius: 50%; object-fit: cover; background: var(--sand); flex: none; border: 2px solid var(--gold); animation: assist-bob 3.4s ease-in-out infinite; }
+.assist-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+@keyframes assist-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@media (prefers-reduced-motion: reduce) { .assist-avatar { animation: none; } }
 .assist-fab:hover { background: var(--red); }
 .assist-panel {
   position: fixed; right: 18px; bottom: 78px; z-index: 91;
@@ -682,6 +687,7 @@ hr.rule { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
 .assist-msg--fa { background: var(--sand); align-self: flex-start; }
 .assist-msg--you { background: var(--black); color: #fff; align-self: flex-end; }
 .assist-link { display: block; margin-top: 6px; font-weight: 700; text-decoration: underline; }
+.assist-read { display: block; margin-top: 6px; padding: 0; border: 0; background: none; font: inherit; font-size: 12px; text-decoration: underline; color: var(--muted); cursor: pointer; }
 .assist-typing { color: var(--muted); }
 .assist-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
 .assist-chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; }

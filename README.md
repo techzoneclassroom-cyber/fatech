@@ -139,7 +139,14 @@ Spanish — and answers in that language from then on (the small language button
 in its header changes it). Canned answers, link labels, order statuses, the
 greeting and the suggestion buttons are translated; product names, specs and the
 short descriptions stored in the database stay as entered. The chat header and
-WhatsApp link are English.
+WhatsApp link are English. Each answer has a **Listen** link that reads it aloud
+at a calm pace in the chosen language. English, French and Spanish are played by
+Google's free text-to-speech through `/api/tts` (same-origin only, limited to 40
+plays a minute per IP), so the voice is native even on phones that have no such
+voice installed; long answers are split into short parts. Google has no Twi voice,
+so Twi falls back to the device's speech synthesis (Akan voice when the phone has
+one). If the voice route fails, every language falls back to the device voice
+too. The assistant's picture is `public/agent.webp` — replace that file to change it.
 
 Unmatched questions go to Google Gemini (free tier) only when `GEMINI_API_KEY`
 is set in the environment; without a key the assistant still answers the common

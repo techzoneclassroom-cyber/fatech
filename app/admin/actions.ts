@@ -145,6 +145,17 @@ export async function setOrderStatus(formData: FormData) {
   revalidatePath("/admin/orders");
 }
 
+export async function deleteOrder(formData: FormData) {
+  await requirePerm("orders");
+  const ref = String(formData.get("ref") ?? "");
+  if (!ref) redirect("/admin/orders?error=Missing order.");
+  const { data, error } = await supabaseAdmin().from("orders").delete().eq("ref", ref).select("ref");
+  if (error) redirect(`/admin/orders/${ref}?error=${encodeURIComponent(error.message)}`);
+  if (!data?.length) redirect(`/admin/orders/${ref}?error=That order no longer exists.`);
+  revalidatePath("/admin/orders");
+  redirect(`/admin/orders?deleted=${encodeURIComponent(ref)}`);
+}
+
 export async function savePromotion(formData: FormData) {
   await requirePerm("promotions");
   const message = String(formData.get("message") ?? "").trim();
