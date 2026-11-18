@@ -37,6 +37,22 @@ const chunks = (text: string, max = 180) => {
   return out;
 };
 
+// SpeechRecognition is still missing from the DOM types, so only the bits we use are typed.
+type Rec = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: (e: { results: { 0: { 0: { transcript: string } } } }) => void;
+  onend: () => void;
+  onerror: () => void;
+  start(): void;
+  stop(): void;
+};
+const speechIn = () => {
+  const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+};
+
 const UI: Record<Lang, { hello: string; chips: string[]; fail: string }> = {
   en: {
     hello: "Hello! Ask me about a product price, delivery, warranty, our location, or an order (send the order number with the phone you used).",
@@ -66,17 +82,21 @@ export function Assistant() {
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<Lang | null>(null);
   const [canSpeak, setCanSpeak] = useState(false);
+  const [canHear, setCanHear] = useState(false);
+  const [micOn, setMicOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const log = useRef<HTMLDivElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const queue = useRef<string[]>([]);
+  const rec = useRef<Rec | null>(null);
 
   const stop = () => {
     queue.current = [];
     audio.current?.pause();
     window.speechSynthesis?.cancel();
+    rec.current?.stop();
   };
 
   useEffect(() => {
@@ -94,6 +114,7 @@ export function Assistant() {
   }, [open]);
 
   useEffect(() => setCanSpeak("speechSynthesis" in window), []);
+  useEffect(() => setCanHear(Boolean(speechIn())), []);
 
   // The dashboard has its own tools; no floating chat there.
   if (path.startsWith("/admin")) return null;
@@ -162,6 +183,34 @@ export function Assistant() {
     }
   };
 
+  const listen = () => {
+    if (rec.current) {
+      rec.current.stop();
+      return;
+    }
+    const Ctor = speechIn();
+    if (!Ctor || busy) return;
+    stop(); // the mic must not hear the agent reading aloud
+    const r = new Ctor();
+    r.lang = SPOKEN[lang ?? "en"];
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    r.onresult = (e) => {
+      const said = e.results[0][0].transcript.trim();
+      if (said) send(said);
+    };
+    const done = () => {
+      if (rec.current !== r) return; // a newer attempt already took over
+      rec.current = null;
+      setMicOn(false);
+    };
+    r.onend = done;
+    r.onerror = done;
+    rec.current = r;
+    setMicOn(true);
+    r.start();
+  };
+
   return (
     <>
       <button type="button" className="assist-fab no-print" aria-expanded={open} aria-controls="assist-panel" aria-label={open ? "Close assistant" : "Ask F.A"} onClick={() => setOpen(!open)}>
@@ -227,6 +276,18 @@ export function Assistant() {
                   aria-label="Your question"
                   placeholder="Ask about a product or order…"
                 />
+                {canHear && (
+                  <button
+                    type="button"
+                    className="btn btn--sm"
+                    aria-pressed={micOn}
+                    aria-label={micOn ? "Stop listening" : "Speak your question"}
+                    onClick={listen}
+                    disabled={busy}
+                  >
+                    {micOn ? "Stop" : "Speak"}
+                  </button>
+                )}
                 <button className="btn btn--dark btn--sm" type="submit" disabled={busy || !input.trim()}>Send</button>
               </form>
 
