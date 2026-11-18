@@ -26,6 +26,9 @@ const pickVoice = (voices: SpeechSynthesisVoice[], l: Lang) => {
 // Language-native voices via our own /api/tts (Google TTS; it has no Twi voice).
 const ttsUrl = (text: string, l: Lang) => `/api/tts?lang=${l}&text=${encodeURIComponent(text)}`;
 
+// A valid, empty WAV: playing it on the mic tap unlocks audio for the reply on phones.
+const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+
 // Google TTS rejects requests over ~200 chars.
 const chunks = (text: string, max = 180) => {
   const out: string[] = [];
@@ -198,6 +201,13 @@ export function Assistant() {
     const Ctor = speechIn();
     if (!Ctor || busy) return;
     stop(); // the mic must not hear the agent reading aloud
+    // Phones block sound that starts after an async reply, so unlock playback on this tap.
+    const a = (audio.current ??= new Audio());
+    a.src = SILENT;
+    a.play().then(() => a.pause()).catch(() => {});
+    const prime = new SpeechSynthesisUtterance(" ");
+    prime.volume = 0;
+    window.speechSynthesis?.speak(prime);
     const r = new Ctor();
     r.lang = SPOKEN[lang ?? "en"];
     r.interimResults = false;

@@ -3,7 +3,7 @@ import { waLink } from "@/lib/site";
 import type { Contact } from "@/lib/contact";
 import { NavLinks } from "./nav-links";
 import { NAV } from "@/lib/nav";
-import { Cart, Mail, Menu as MenuIcon, Phone, Pin, WhatsApp } from "./icons";
+import { Cart, Mail, Menu as MenuIcon, Phone, Pin, User, WhatsApp } from "./icons";
 import { Menu } from "./menu";
 import { getActivePromo } from "@/lib/promos";
 
@@ -55,7 +55,9 @@ export async function Header({ contact }: { contact: Contact }) {
             <Link className="cart-link" href="/cart" aria-label="Cart">
               <Cart size={17} /> <span>Cart</span>
             </Link>
-            <Link className="cart-link" href="/account">Account</Link>
+            <Link className="cart-link" href="/account" aria-label="Your account">
+              <User size={17} /> <span>Account</span>
+            </Link>
             <Menu>
               <summary><MenuIcon size={18} /> Menu</summary>
               <div className="menu-panel">

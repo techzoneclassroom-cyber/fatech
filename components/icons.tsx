@@ -42,6 +42,10 @@ export const Search = (p: IconProps) => (
   <S {...p}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></S>
 );
 
+export const User = (p: IconProps) => (
+  <S {...p}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></S>
+);
+
 export const ArrowRight = (p: IconProps) => (
   <S {...p}><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></S>
 );
