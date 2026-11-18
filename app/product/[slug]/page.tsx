@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { categoryName } from "@/lib/catalogue";
 import { getProducts } from "@/lib/products";
+import { getProductRatings } from "@/lib/reviews";
 import { ghs } from "@/lib/site";
 import { BuyBox } from "@/components/buy-box";
 import { ProductCard } from "@/components/product-card";
@@ -33,6 +34,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!p) notFound();
 
   const related = all.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);
+  const ratings = await getProductRatings(p.slug);
+  const rounded = Math.round(ratings.avg);
+  const stars = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
   const verified = Boolean(p.verified);
   const save = verified && p.was ? Math.round((1 - p.price / p.was) * 100) : 0;
 
@@ -73,6 +77,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 : "Example price — not a confirmed purchase price. Ask us for the current price."}
             </p>
             <p className="pdp-short">{p.short}</p>
+
+            {ratings.count > 0 ? (
+              <p className="pdp-meta" style={{ marginTop: 10 }} aria-label={`Rated ${ratings.avg.toFixed(1)} out of 5 from ${ratings.count} ratings`}>
+                <span style={{ color: "var(--gold)", letterSpacing: 1 }} aria-hidden="true">{stars(rounded)}</span>
+                <span>{ratings.avg.toFixed(1)} · {ratings.count} rating{ratings.count === 1 ? "" : "s"}</span>
+              </p>
+            ) : (
+              <p className="pdp-meta" style={{ marginTop: 10 }}><span>No ratings yet — buy it and rate it after delivery.</span></p>
+            )}
 
             <BuyBox product={{ id: p.slug, name: p.name, price: p.price, verified }} />
 

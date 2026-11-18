@@ -91,6 +91,7 @@ export function Assistant() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const queue = useRef<string[]>([]);
   const rec = useRef<Rec | null>(null);
+  const voiceAsk = useRef(false);
 
   const stop = () => {
     queue.current = [];
@@ -164,9 +165,12 @@ export function Assistant() {
   const send = async (text: string) => {
     const message = text.trim().slice(0, 500);
     if (!message || busy) return;
+    const heard = voiceAsk.current; // asked by voice: read the answer back
+    voiceAsk.current = false;
     setInput("");
     setMsgs((m) => [...m, { from: "you", text: message }]);
     setBusy(true);
+    let said = "";
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
@@ -176,11 +180,14 @@ export function Assistant() {
       const data = await res.json().catch(() => ({}));
       const reply = res.ok ? data : { text: data.error ?? ui.fail };
       setMsgs((m) => [...m, { from: "fa", text: reply.text, href: reply.href, label: reply.label }]);
+      said = reply.text;
     } catch {
       setMsgs((m) => [...m, { from: "fa", text: ui.fail }]);
+      said = ui.fail;
     } finally {
       setBusy(false);
     }
+    if (heard && said) speak(said);
   };
 
   const listen = () => {
@@ -197,7 +204,10 @@ export function Assistant() {
     r.maxAlternatives = 1;
     r.onresult = (e) => {
       const said = e.results[0][0].transcript.trim();
-      if (said) send(said);
+      if (said) {
+        voiceAsk.current = true;
+        send(said);
+      }
     };
     const done = () => {
       if (rec.current !== r) return; // a newer attempt already took over
@@ -279,13 +289,22 @@ export function Assistant() {
                 {canHear && (
                   <button
                     type="button"
-                    className="btn btn--sm"
+                    className="assist-mic"
                     aria-pressed={micOn}
                     aria-label={micOn ? "Stop listening" : "Speak your question"}
+                    title={micOn ? "Stop listening" : "Speak your question"}
                     onClick={listen}
                     disabled={busy}
                   >
-                    {micOn ? "Stop" : "Speak"}
+                    {micOn ? (
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <rect x="9" y="2.5" width="6" height="11.5" rx="3" />
+                        <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
+                        <path d="M12 17.5V21" />
+                      </svg>
+                    )}
                   </button>
                 )}
                 <button className="btn btn--dark btn--sm" type="submit" disabled={busy || !input.trim()}>Send</button>

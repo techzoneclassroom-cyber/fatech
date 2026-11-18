@@ -67,6 +67,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             <Link href="/admin">Dashboard</Link>
             {perms.includes("products") && <Link href="/admin/products">Products</Link>}
             {perms.includes("orders") && <Link href="/admin/orders">Orders</Link>}
+            {perms.includes("reviews") && <Link href="/admin/reviews">Ratings</Link>}
             {perms.includes("products") && <Link href="/admin/import">Import</Link>}
             {perms.includes("promotions") && <Link href="/admin/promotions">Promotions</Link>}
             {perms.includes("settings") && <Link href="/admin/settings">Settings</Link>}

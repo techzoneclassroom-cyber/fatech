@@ -62,6 +62,18 @@ export async function getOrder(ref: string): Promise<Order | null> {
   return data ? toOrder(data) : null;
 }
 
+export type Review = { id: string; product_slug: string; order_ref: string; rating: number; hidden: boolean; created_at: string };
+
+export async function listReviews(): Promise<Review[]> {
+  const { data, error } = await supabaseAdmin()
+    .from("reviews")
+    .select("id,product_slug,order_ref,rating,hidden,created_at")
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Review[];
+}
+
 export type Promotion = { id: string; message: string; href: string; active: boolean };
 
 export async function listPromotions(): Promise<Promotion[]> {

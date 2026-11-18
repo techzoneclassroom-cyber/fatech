@@ -177,6 +177,11 @@ export default function CartPage() {
               })}
             </div>
             <p className="form-note" style={{ marginTop: 14 }}>
+              Ordering as a guest works fine. <Link href="/account/login">Sign in</Link> or{" "}
+              <Link href="/account/signup">create a free account</Link> to keep your order history and reorder in one tap.
+              Your cart stays saved on this device either way.
+            </p>
+            <p className="form-note" style={{ marginTop: 14 }}>
               {hasSample
                 ? "Items marked “Example price” use sample prices. We confirm the current price and availability before you pay."
                 : "We confirm the final price and availability before you pay."}{" "}

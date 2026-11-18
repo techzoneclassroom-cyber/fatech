@@ -24,14 +24,15 @@ export function roleOf(user: User): StaffRole | null {
 }
 
 // Admins can hand a coworker parts of the dashboard; admins always have all of them.
-export type Perm = "products" | "orders" | "promotions" | "settings";
+export type Perm = "products" | "orders" | "promotions" | "reviews" | "settings";
 export const PERMS: { key: Perm; label: string }[] = [
   { key: "products", label: "Products and import" },
   { key: "orders", label: "Orders" },
   { key: "promotions", label: "Promotions" },
+  { key: "reviews", label: "Ratings" },
   { key: "settings", label: "Shop settings" },
 ];
-const DEFAULT_STAFF_PERMS: Perm[] = ["products", "orders", "promotions"];
+const DEFAULT_STAFF_PERMS: Perm[] = ["products", "orders", "promotions", "reviews"];
 
 export function permsOf(user: User): Perm[] {
   if (roleOf(user) === "admin") return PERMS.map((p) => p.key);

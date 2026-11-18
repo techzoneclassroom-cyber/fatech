@@ -28,19 +28,28 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
-  if (!signedIn && pathname !== "/admin/login") {
-    const to = request.nextUrl.clone();
-    to.pathname = "/admin/login";
-    to.search = "";
-    return NextResponse.redirect(to);
+  if (pathname.startsWith("/admin")) {
+    if (!signedIn && pathname !== "/admin/login") {
+      const to = request.nextUrl.clone();
+      to.pathname = "/admin/login";
+      to.search = "";
+      return NextResponse.redirect(to);
+    }
+    if (signedIn && pathname === "/admin/login") {
+      const to = request.nextUrl.clone();
+      to.pathname = "/admin";
+      to.search = "";
+      return NextResponse.redirect(to);
+    }
   }
-  if (signedIn && pathname === "/admin/login") {
+  // /account/login and /account/signup stay open; only the account page itself is gated.
+  if (pathname === "/account" && !signedIn) {
     const to = request.nextUrl.clone();
-    to.pathname = "/admin";
+    to.pathname = "/account/login";
     to.search = "";
     return NextResponse.redirect(to);
   }
   return response;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/account/:path*"] };

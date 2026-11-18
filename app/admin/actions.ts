@@ -191,6 +191,20 @@ export async function deletePromotion(formData: FormData) {
   revalidatePath("/admin/promotions");
 }
 
+export async function setReviewHidden(formData: FormData) {
+  await requirePerm("reviews");
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const hidden = String(formData.get("hidden") ?? "") === "true";
+  if (!id) redirect("/admin/reviews?error=Missing rating.");
+  const { error } = await supabaseAdmin().from("reviews").update({ hidden: !hidden }).eq("id", id);
+  if (error) redirect(`/admin/reviews?error=${encodeURIComponent(error.message)}`);
+  // The product page caches ratings for 60s; refresh it so hiding shows immediately.
+  if (slug) revalidatePath(`/product/${slug}`);
+  revalidatePath("/admin/reviews");
+  redirect(`/admin/reviews?${hidden ? "shown" : "hidden"}=1`);
+}
+
 const ROLES = ["admin", "staff"];
 
 // Only areas that exist, and staff must keep at least one; admins hold all of them anyway.

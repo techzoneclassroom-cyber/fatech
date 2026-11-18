@@ -1,6 +1,7 @@
 "use server";
 
 import { isAdminConfigured, supabaseAdmin } from "@/lib/supabase/admin";
+import { isDbConfigured, supabaseServer } from "@/lib/supabase/server";
 
 export type PlacedOrder = { ref: string; stored: boolean };
 
@@ -48,12 +49,29 @@ export async function placeOrder(input: {
     }));
     const total = lines.reduce((s, i) => s + i.price_pesewas * i.qty, 0);
 
-    const { data: saved, error } = await supabaseAdmin()
+    // Link the order to the signed-in customer, if any, so it appears in their history.
+    let userId: string | null = null;
+    if (isDbConfigured) {
+      try {
+        userId = (await (await supabaseServer()).auth.getUser()).data.user?.id ?? null;
+      } catch {
+        // No session: the order is saved as a guest order.
+      }
+    }
+    const row: Record<string, unknown> = { customer_name: name, phone, town, notes, items: lines, total_pesewas: total };
+    if (userId) row.user_id = userId;
+
+    let { data: saved, error } = await supabaseAdmin()
       .from("orders")
-      .insert({ customer_name: name, phone, town, notes, items: lines, total_pesewas: total })
+      .insert(row)
       .select("ref")
       .single();
-    if (error) throw error;
+    // Before 006_accounts_reviews.sql runs there is no user_id column; still save the sale.
+    if (error && userId) {
+      delete row.user_id;
+      ({ data: saved, error } = await supabaseAdmin().from("orders").insert(row).select("ref").single());
+    }
+    if (error || !saved) throw error ?? new Error("Order not saved.");
     return { ref: String(saved.ref), stored: true };
   } catch {
     return { ref: localRef(), stored: false };

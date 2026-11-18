@@ -55,12 +55,14 @@ export async function Header({ contact }: { contact: Contact }) {
             <Link className="cart-link" href="/cart" aria-label="Cart">
               <Cart size={17} /> <span>Cart</span>
             </Link>
+            <Link className="cart-link" href="/account">Account</Link>
             <Menu>
               <summary><MenuIcon size={18} /> Menu</summary>
               <div className="menu-panel">
                 <span className="menu-note">Navigate</span>
                 {NAV.map((l) => <Link key={l.href} href={l.href}>{l.label}</Link>)}
                 <span className="menu-note">Orders &amp; support</span>
+                <Link href="/account">Your account / orders</Link>
                 <Link href="/quote">Request a quote</Link>
                 <Link href="/import">Import a product</Link>
                 <Link href="/repair">Book or track a repair</Link>

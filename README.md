@@ -32,7 +32,8 @@ app/                 pages (App Router)
   shop/              catalogue with search + category filter
   product/[slug]/    product detail (revalidated every 60s)
   cart/              cart + WhatsApp checkout (also records the order when Supabase is on)
-  admin/             sign in + dashboard: products, CSV import, orders, promotions, team, settings
+  account/           optional customer sign in: order history, one-tap reorder, post-delivery ratings
+  admin/             sign in + dashboard: products, CSV import, orders, ratings, promotions, team, settings
   services/ software/ courses/
   about/ contact/ quote/ import/ repair/ faq/
   policies/          shipping, returns, privacy, terms, cookies
@@ -46,9 +47,10 @@ lib/products.ts      product reads (Supabase, falling back to the sample file)
 lib/assistant.ts     assistant rules: products, categories, policies, order status
 lib/admin/           server-only admin queries + product/CSV validation
 lib/promos.ts        cached banner read (used by the site header)
+lib/reviews.ts       visible rating summary per product (used by the product page)
 lib/cart.ts          localStorage cart (key: fa_cart)
 lib/supabase/        server-only Supabase clients (read, cookie, service-role, roles/permissions)
-middleware.ts        gates /admin, refreshes the admin session
+middleware.ts        gates /admin and the /account page, refreshes the session
 supabase/            schema + seed SQL (run once in the dashboard)
 public/              logo, flyer, generated images (images/*.webp)
 artwork/             PNG originals behind public/images/*.webp (local only)
@@ -146,7 +148,10 @@ plays a minute per IP), so the voice is native even on phones that have no such
 voice installed; long answers are split into short parts. Google has no Twi voice,
 so Twi falls back to the device's speech synthesis (Akan voice when the phone has
 one). If the voice route fails, every language falls back to the device voice
-too. The assistant's picture is `public/agent.webp` — replace that file to change it.
+too. A round microphone button (shown only where the browser can listen) turns
+the customer's speech into the question and reads the answer back automatically;
+typed questions stay silent unless Listen is tapped. The assistant's picture is
+`public/agent.webp` — replace that file to change it.
 
 Unmatched questions go to Google Gemini (free tier) only when `GEMINI_API_KEY`
 is set in the environment; without a key the assistant still answers the common
@@ -162,15 +167,17 @@ make it work:
 1. Create a project at supabase.com (free tier is enough to start).
 2. In the SQL editor, run `supabase/migrations/001_init.sql`, then
    `supabase/migrations/002_admin.sql`, then `supabase/migrations/003_verified.sql`,
-   `supabase/migrations/004_settings.sql` and `supabase/migrations/005_product_images.sql`,
-   then `supabase/seed.sql`. The second file adds orders, promotions and the
-   `product-images` storage bucket; the third adds the `verified` column; the
-   fourth adds the editable shop settings row; the fifth adds the product photo
-   list (up to five).
+   `supabase/migrations/004_settings.sql`, `supabase/migrations/005_product_images.sql`
+   and `supabase/migrations/006_accounts_reviews.sql`, then `supabase/seed.sql`.
+   The second file adds orders, promotions and the `product-images` storage
+   bucket; the third adds the `verified` column; the fourth adds the editable
+   shop settings row; the fifth adds the product photo list (up to five); the
+   sixth adds customer accounts (orders linked to a user) and product ratings.
 3. Authentication → Users → Add user: the admin's email and a strong password,
    auto-confirm the user. Then edit that user's **App metadata** (raw JSON) to
-   `{"role": "admin"}`. Authentication → Providers → Email: turn **off** "Allow
-   new users to sign up" — accounts are created from the Team page instead.
+   `{"role": "admin"}`. Keep **Allow new users to sign up** on (shoppers need it
+   for optional accounts); a role check keeps anyone without app metadata out of
+   the dashboard. Email confirmation is optional — see “Customer accounts”.
 4. In Project Settings → API, copy the project URL, the publishable (anon) key
    and the **service_role** key. Put all three in `.env.local` (local) and in
    Vercel's environment variables:
@@ -190,6 +197,27 @@ resume it from the dashboard within a year) and keeps no scheduled backups. See
 Free tier below for the fixes. A coworker who forgets their password is reset
 from Supabase → Authentication → Users (there is no self-service reset, because
 the shop has no mail service on the free tier).
+
+## Customer accounts and ratings
+
+Accounts are optional: anyone can still order as a guest, and the cart lives in
+the browser either way. Signing in (`/account`) adds a purchase history for
+orders sent while signed in, a one-tap reorder button, and the ability to rate a
+product once its order is marked **delivered** in the dashboard.
+
+To switch it on:
+
+1. Run `supabase/migrations/006_accounts_reviews.sql` (after 001–005).
+2. Authentication → Providers → Email: keep **Allow new users to sign up** on.
+   Confirm email can be **off** — without a paid mail service, Supabase's free
+   sender is rate-limited, so instant sign-up is smoother. With it on, the
+   customer must open the emailed link before signing in.
+3. Nothing else: ratings are written server-side after the order is checked
+   (signed-in buyer, delivered, product on that order), one per product per order.
+
+The product page shows the average of **visible** ratings and refreshes within a
+minute. In `/admin/reviews` (the Ratings tab, permission `reviews`) an admin can
+hide or show each rating; hidden ones stay on record but drop out of the shop.
 
 ## Free tier
 
@@ -257,7 +285,7 @@ Nothing needs Supabase for the site to run; without it the sample catalogue is u
 
 ## Not built yet
 
-Online payment, customer accounts, stock counting, email notifications, reviews.
+Online payment, stock counting, email notifications.
 Receipts and invoices print from the browser (no PDF server), so print from the
 deployed site or a local production build — `next dev` is not a reliable place to
 print from.
