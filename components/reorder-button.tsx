@@ -12,8 +12,8 @@ export function ReorderButton({ items }: { items: Line[] }) {
       type="button"
       style={{ marginTop: 12 }}
       onClick={() => {
-        // Saved prices are in pesewas; the cart works in cedis.
-        items.forEach((i) => addItem({ id: i.slug, name: i.name, price: i.price_pesewas / 100, sample: false }, i.qty));
+        // Orders and the cart both store pesewas; no conversion.
+        items.forEach((i) => addItem({ id: i.slug, name: i.name, price: i.price_pesewas, sample: false }, i.qty));
         router.push("/cart");
       }}
     >
