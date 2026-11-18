@@ -253,6 +253,19 @@ export async function saveSettings(formData: FormData) {
     patch.signature_url = supabaseAdmin().storage.from("product-images").getPublicUrl(path).data.publicUrl;
   }
 
+  const agentPic = formData.get("agent");
+  if (agentPic instanceof File && agentPic.size > 0) {
+    if (agentPic.size > 2 * 1024 * 1024) redirect("/admin/settings?error=The assistant photo must be under 2 MB.");
+    if (!agentPic.type.startsWith("image/")) redirect("/admin/settings?error=The assistant photo must be a PNG or JPG image.");
+    const ext = (agentPic.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 4) || "jpg";
+    const path = `agent-${Date.now()}.${ext}`;
+    const { error } = await supabaseAdmin()
+      .storage.from("product-images")
+      .upload(path, agentPic, { contentType: agentPic.type || "image/jpeg", upsert: false });
+    if (error) redirect(`/admin/settings?error=${encodeURIComponent(`Assistant photo upload failed: ${error.message}`)}`);
+    patch.agent_url = supabaseAdmin().storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  }
+
   const { error } = await supabaseAdmin().from("site_settings").upsert({ id: 1, ...patch }, { onConflict: "id" });
   if (error) redirect(`/admin/settings?error=${encodeURIComponent(error.message)}`);
 

@@ -234,7 +234,7 @@ export function Assistant() {
   return (
     <>
       <button type="button" className="assist-fab no-print" aria-expanded={open} aria-controls="assist-panel" aria-label={open ? "Close assistant" : "Ask F.A"} onClick={() => setOpen(!open)}>
-        <img className="assist-avatar" src="/agent.webp" alt="" width={30} height={30} />
+        <img className="assist-avatar" src={contact.agentUrl} alt="" width={30} height={30} />
         Ask F.A
       </button>
 
@@ -242,7 +242,7 @@ export function Assistant() {
         <section id="assist-panel" className="assist-panel no-print" role="dialog" aria-label="Shop assistant">
           <header className="assist-head">
             <span className="assist-id">
-              <img className="assist-avatar" src="/agent.webp" alt="" width={40} height={40} />
+              <img className="assist-avatar" src={contact.agentUrl} alt="" width={40} height={40} />
               <span><b>F.A assistant</b><small>Prices, delivery, orders</small></span>
             </span>
             {lang && (

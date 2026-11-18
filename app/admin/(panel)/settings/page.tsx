@@ -1,7 +1,7 @@
 import { permsOf, supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveSettings } from "@/app/admin/actions";
-import { DEFAULT_CONTACT, type SettingsRow } from "@/lib/contact";
+import { DEFAULT_CONTACT, DEFAULT_AGENT, type SettingsRow } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,7 @@ const EMPTY: SettingsRow = {
   location: DEFAULT_CONTACT.location,
   signatory: "",
   signature_url: "",
+  agent_url: "",
 };
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string }> }) {
@@ -69,6 +70,22 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div className="field" style={{ marginTop: 12 }}>
           <label htmlFor="location">Town / address</label>
           <input id="location" name="location" required minLength={2} maxLength={120} defaultValue={row.location} />
+        </div>
+
+        <hr className="rule" style={{ margin: "20px 0 4px" }} />
+
+        <p className="kicker" style={{ marginTop: 14 }}>Shop assistant</p>
+        <div className="field" style={{ marginTop: 8 }}>
+          <label htmlFor="agent">Assistant photo <span className="hint">(optional, PNG or JPG, under 2 MB)</span></label>
+          <input id="agent" name="agent" type="file" accept="image/png,image/jpeg" />
+          <img
+            src={row.agent_url || DEFAULT_AGENT}
+            alt="Current assistant photo"
+            width={64}
+            height={64}
+            style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", marginTop: 10, display: "block", border: "2px solid var(--gold)" }}
+          />
+          <span className="hint">The round photo on the Ask F.A button and panel. Uploading a new file replaces the current one.</span>
         </div>
 
         <hr className="rule" style={{ margin: "20px 0 4px" }} />

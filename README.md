@@ -167,12 +167,14 @@ make it work:
 1. Create a project at supabase.com (free tier is enough to start).
 2. In the SQL editor, run `supabase/migrations/001_init.sql`, then
    `supabase/migrations/002_admin.sql`, then `supabase/migrations/003_verified.sql`,
-   `supabase/migrations/004_settings.sql`, `supabase/migrations/005_product_images.sql`
-   and `supabase/migrations/006_accounts_reviews.sql`, then `supabase/seed.sql`.
+   `supabase/migrations/004_settings.sql`, `supabase/migrations/005_product_images.sql`,
+   `supabase/migrations/006_accounts_reviews.sql` and `supabase/migrations/007_agent_photo.sql`,
+   then `supabase/seed.sql`.
    The second file adds orders, promotions and the `product-images` storage
    bucket; the third adds the `verified` column; the fourth adds the editable
    shop settings row; the fifth adds the product photo list (up to five); the
-   sixth adds customer accounts (orders linked to a user) and product ratings.
+   sixth adds customer accounts (orders linked to a user) and product ratings;
+   the seventh adds the admin-editable assistant photo.
 3. Authentication → Users → Add user: the admin's email and a strong password,
    auto-confirm the user. Then edit that user's **App metadata** (raw JSON) to
    `{"role": "admin"}`. Keep **Allow new users to sign up** on (shoppers need it

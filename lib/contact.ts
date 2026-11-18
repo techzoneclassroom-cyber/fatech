@@ -1,5 +1,7 @@
 // Contact details shown across the site. DB values override these defaults;
 // keep the defaults in step with supabase/migrations/004_settings.sql.
+export const DEFAULT_AGENT = "/agent.webp";
+
 export const DEFAULT_CONTACT: Contact = {
   phone: "054 257 5486",
   phoneHref: "tel:+233542575486",
@@ -11,6 +13,7 @@ export const DEFAULT_CONTACT: Contact = {
   ],
   signatory: "",
   signatureUrl: "",
+  agentUrl: DEFAULT_AGENT,
 };
 
 export type Contact = {
@@ -21,6 +24,7 @@ export type Contact = {
   whatsapp: { label: string; intl: string }[];
   signatory: string;
   signatureUrl: string;
+  agentUrl: string;
 };
 
 export type SettingsRow = {
@@ -32,6 +36,7 @@ export type SettingsRow = {
   location: string;
   signatory: string;
   signature_url: string;
+  agent_url?: string;
 };
 
 // Ghana numbers are stored as 0244…; WhatsApp links need 233244… without spaces.
@@ -56,5 +61,6 @@ export const contactFromRow = (r: SettingsRow | null): Contact => {
     whatsapp,
     signatory: r.signatory.trim(),
     signatureUrl: r.signature_url,
+    agentUrl: r.agent_url?.trim() || DEFAULT_AGENT,
   };
 };
